@@ -1,0 +1,244 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          String    @default("MEMBER") // ADMIN, MANAGER, MEMBER
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  deals         Deal[]
+  contacts      Contact[]
+  companies     Company[]
+  messagesSent  Message[] @relation("MessageSender")
+  emailsSent    Email[]   @relation("EmailSender")
+  calendarEvents CalendarEvent[]
+  activities    Activity[]
+  
+  @@map("users")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phone       String?
+  position    String?
+  linkedin    String?
+  twitter     String?
+  notes       String?
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  deals       Deal[]
+  emails      Email[]
+  activities  Activity[]
+  
+  @@map("contacts")
+}
+
+model Company {
+  id            String        @id @default(cuid())
+  name          String
+  website       String?
+  industry      String?
+  stage         String?       // IDEA, PRE_SEED, SEED, SERIES_A, etc.
+  description   String?
+  logo          String?
+  foundedYear   Int?
+  teamSize      Int?
+  location      String?
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  contacts      Contact[]
+  deals         Deal[]
+  portfolio     Portfolio?
+  
+  @@map("companies")
+}
+
+model Deal {
+  id            String      @id @default(cuid())
+  title         String
+  amount        Float?
+  stage         String      @default("LEAD") // LEAD, QUALIFIED, MEETING, etc.
+  probability   Int         @default(50)
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  notes         String?
+  companyId     String?
+  company       Company?    @relation(fields: [companyId], references: [id])
+  contactId     String?
+  contact       Contact?    @relation(fields: [contactId], references: [id])
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  activities    Activity[]
+  
+  @@map("deals")
+}
+
+model Portfolio {
+  id                String    @id @default(cuid())
+  companyId         String    @unique
+  company           Company   @relation(fields: [companyId], references: [id])
+  investmentAmount  Float
+  investmentDate    DateTime
+  equityPercentage  Float?
+  currentValuation  Float?
+  status           String    @default("ACTIVE") // ACTIVE, EXITED, FAILED
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  
+  // Relations
+  metrics          PortfolioMetric[]
+  
+  @@map("portfolios")
+}
+
+model PortfolioMetric {
+  id          String    @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  metricDate  DateTime
+  revenue     Float?
+  users       Int?
+  mrr         Float?
+  arr         Float?
+  burnRate    Float?
+  runway      Int?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("portfolio_metrics")
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  content     String
+  channelId   String?
+  channel     Channel?    @relation(fields: [channelId], references: [id])
+  senderId    String
+  sender      User        @relation("MessageSender", fields: [senderId], references: [id])
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@map("messages")
+}
+
+model Channel {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isPrivate   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  messages    Message[]
+  
+  @@map("channels")
+}
+
+model Email {
+  id            String       @id @default(cuid())
+  subject       String
+  body          String
+  from          String
+  to            String       // Store as comma-separated string for SQLite
+  cc            String       @default("") // Store as comma-separated string
+  bcc           String       @default("") // Store as comma-separated string
+  status        String       @default("DRAFT") // DRAFT, SCHEDULED, SENT, etc.
+  scheduledAt   DateTime?
+  sentAt        DateTime?
+  openedAt      DateTime?
+  clickedAt     DateTime?
+  senderId      String
+  sender        User         @relation("EmailSender", fields: [senderId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  campaignId    String?
+  campaign      EmailCampaign? @relation(fields: [campaignId], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@map("emails")
+}
+
+model EmailCampaign {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  status      String    @default("DRAFT") // DRAFT, ACTIVE, PAUSED, COMPLETED
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  emails      Email[]
+  
+  @@map("email_campaigns")
+}
+
+model CalendarEvent {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  location    String?
+  meetingLink String?
+  googleEventId String?
+  calendlyEventId String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("calendar_events")
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        String       // NOTE, CALL, MEETING, EMAIL, TASK, etc.
+  title       String
+  description String?
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  contactId   String?
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  dealId      String?
+  deal        Deal?        @relation(fields: [dealId], references: [id])
+  createdAt   DateTime     @default(now())
+  
+  @@map("activities")
+}
+
