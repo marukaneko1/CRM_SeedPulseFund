@@ -37,7 +37,17 @@ export default function LoginPage() {
         setError(`Login failed: ${result.error}`)
       } else if (result?.ok) {
         console.log("Sign in successful, redirecting to dashboard")
-        router.push("/dashboard")
+        
+        // Check if this is a new user who should see onboarding
+        const isNewUser = localStorage.getItem('new_user')
+        const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
+        
+        if (isNewUser && !hasSeenOnboarding) {
+          localStorage.removeItem('new_user')
+          router.push("/dashboard/onboarding")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         setError("Login failed. Please check your credentials.")
       }

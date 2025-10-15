@@ -72,9 +72,12 @@ export default function SignUpPage() {
 
       setSuccess(true)
       
+      // Mark as new user for onboarding
+      localStorage.setItem('new_user', 'true')
+      
       // Redirect to login after 3 seconds
       setTimeout(() => {
-        router.push("/auth/login")
+        router.push("/auth/login?newUser=true")
       }, 3000)
     } catch (error: any) {
       setError(error.message || "Failed to create account")
