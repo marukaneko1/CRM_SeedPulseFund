@@ -16,6 +16,7 @@ model User {
   password      String
   role          String    @default("MEMBER") // ADMIN, MANAGER, MEMBER
   avatar        String?
+  emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
