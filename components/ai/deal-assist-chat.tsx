@@ -14,7 +14,7 @@ import {
   Brain,
   Loader2
 } from 'lucide-react'
-import { useChat } from 'ai/react'
+import { useChat } from 'ai'
 
 interface Message {
   id: string
