@@ -24,9 +24,12 @@ interface MessageComposerProps {
   onSendMessage: (message: { content?: string; type: string; attachments?: any[]; poll?: any; event?: any }) => void
   channelId?: string
   directChatId?: string
+  onInputChange?: (value: string) => void
+  onStartTyping?: () => void
+  onStopTyping?: () => void
 }
 
-export function MessageComposer({ onSendMessage, channelId, directChatId }: MessageComposerProps) {
+export function MessageComposer({ onSendMessage, channelId, directChatId, onInputChange, onStartTyping, onStopTyping }: MessageComposerProps) {
   const { data: session } = useSession()
   const [message, setMessage] = useState('')
   const [isRecording, setIsRecording] = useState(false)
