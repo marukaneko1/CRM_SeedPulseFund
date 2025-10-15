@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -78,9 +80,86 @@ const demoDeals = [
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const isAdmin = session?.user?.email === 'admin@demo.com'
   
+  const [activeView, setActiveView] = useState('all-pipeline')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isStarred, setIsStarred] = useState(false)
+  const [selectedDeals, setSelectedDeals] = useState<number[]>([])
+  const [showSlimView, setShowSlimView] = useState(false)
+  
   const deals = isAdmin ? demoDeals : []
+  
+  // Button handlers
+  const handleShare = () => {
+    alert('Share functionality - Generate shareable link or invite collaborators')
+  }
+  
+  const handleListOptions = () => {
+    alert('List Options - Configure list settings and permissions')
+  }
+  
+  const handleFilter = () => {
+    alert('Filter - Apply filters to narrow down results')
+  }
+  
+  const handleSort = () => {
+    alert('Sort - Change sorting criteria')
+  }
+  
+  const handleCustomize = () => {
+    alert('Customize - Customize columns and layout')
+  }
+  
+  const handleDownload = () => {
+    // Export deals to CSV
+    const csv = deals.map(d => 
+      `${d.name},${d.status},${d.dealTeam},${d.connections}`
+    ).join('\n')
+    const blob = new Blob([`Name,Status,Deal Team,Connections\n${csv}`], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'deals-export.csv'
+    a.click()
+  }
+  
+  const handleUpload = () => {
+    alert('Upload - Import deals from CSV or other sources')
+  }
+  
+  const handleMaximize = () => {
+    alert('Maximize - Enter fullscreen mode')
+  }
+  
+  const handleAddNew = () => {
+    router.push('/dashboard/deals?action=create')
+  }
+  
+  const toggleStar = () => {
+    setIsStarred(!isStarred)
+  }
+  
+  const toggleSlimView = () => {
+    setShowSlimView(!showSlimView)
+  }
+  
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedDeals(deals.map((_, i) => i))
+    } else {
+      setSelectedDeals([])
+    }
+  }
+  
+  const handleSelectDeal = (index: number) => {
+    setSelectedDeals(prev => 
+      prev.includes(index) 
+        ? prev.filter(i => i !== index)
+        : [...prev, index]
+    )
+  }
   
   return (
     <div className="flex-1 bg-white flex flex-col">
@@ -89,14 +168,16 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-gray-900">GV Ventures</h1>
-            <Star className="w-5 h-5 text-gray-400" />
+            <button onClick={toggleStar} className="hover:scale-110 transition-transform">
+              <Star className={`w-5 h-5 ${isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`} />
+            </button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleShare}>
               <Share className="w-4 h-4 mr-2" />
               Share
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleListOptions}>
               List Options
             </Button>
           </div>
@@ -104,25 +185,71 @@ export default function DashboardPage() {
 
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-4">
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300">
+          <button 
+            onClick={() => setActiveView('views')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'views' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             Views
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+          <button 
+            onClick={() => setActiveView('all-pipeline')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'all-pipeline' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             + All Pipeline
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300">
+          <button 
+            onClick={() => setActiveView('saved-1')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'saved-1' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             Saved View 1
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300">
+          <button 
+            onClick={() => setActiveView('team-activity')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'team-activity' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             Team Activity 1
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300">
+          <button 
+            onClick={() => setActiveView('funnel')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'funnel' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             Funnel Analysis 2
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent hover:border-gray-300">
+          <button 
+            onClick={() => setActiveView('list-summary')}
+            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeView === 'list-summary' 
+                ? 'text-blue-600 border-blue-600' 
+                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
+            }`}
+          >
             List Summary
           </button>
-          <button className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+          <button 
+            onClick={handleAddNew}
+            className="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded transition-colors"
+            title="Add new view"
+          >
             <Plus className="w-4 h-4" />
           </button>
         </div>
@@ -133,30 +260,42 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Collaborators</span>
             <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-gray-400" />
-              <Button variant="outline" size="sm">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input 
+                  placeholder="Search deals..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-8 w-48"
+                />
+              </div>
+              <Button variant="outline" size="sm" onClick={handleFilter}>
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleSort}>
                 <ArrowUpDown className="w-4 h-4 mr-2" />
                 Sort: Time In Current Status 1x
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={handleCustomize}>
                 <MoreHorizontal className="w-4 h-4 mr-2" />
                 Customize
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant={showSlimView ? "default" : "outline"} 
+                size="sm" 
+                onClick={toggleSlimView}
+              >
                 Slim View
               </Button>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleDownload} title="Download CSV">
                   <Download className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleUpload} title="Upload/Import">
                   <Upload className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={handleMaximize} title="Maximize">
                   <Maximize2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -171,7 +310,12 @@ export default function DashboardPage() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <input type="checkbox" className="rounded border-gray-300" />
+                <input 
+                  type="checkbox" 
+                  className="rounded border-gray-300 cursor-pointer" 
+                  checked={selectedDeals.length === deals.length && deals.length > 0}
+                  onChange={handleSelectAll}
+                />
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Name
@@ -204,9 +348,15 @@ export default function DashboardPage() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {deals.map((deal, index) => (
-              <tr key={index} className="hover:bg-gray-50 cursor-pointer">
+              <tr key={index} className={`hover:bg-gray-50 cursor-pointer ${selectedDeals.includes(index) ? 'bg-blue-50' : ''}`}>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <input type="checkbox" className="rounded border-gray-300" />
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-gray-300 cursor-pointer" 
+                    checked={selectedDeals.includes(index)}
+                    onChange={() => handleSelectDeal(index)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
