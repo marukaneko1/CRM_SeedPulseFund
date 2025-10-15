@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,16 +14,20 @@ const channels = [
   { id: "3", name: "portfolio", description: "Portfolio updates" },
 ]
 
-const demoMessages = [
+// Demo messages only for admin
+const initialDemoMessages = [
   { id: "1", sender: "John Doe", content: "Has anyone reviewed the new pitch deck from Startup X?", time: "10:30 AM", avatar: "JD" },
   { id: "2", sender: "Sarah Smith", content: "Yes, I think it looks promising. The metrics are strong.", time: "10:32 AM", avatar: "SS" },
   { id: "3", sender: "Mike Johnson", content: "Agreed. Should we schedule a call with the founders?", time: "10:35 AM", avatar: "MJ" },
 ]
 
 export default function MessagesPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
   const [selectedChannel, setSelectedChannel] = useState(channels[0])
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState(demoMessages)
+  const [messages, setMessages] = useState(isAdmin ? initialDemoMessages : [])
 
   const handleSendMessage = () => {
     if (!message.trim()) return
