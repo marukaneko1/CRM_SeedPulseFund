@@ -183,6 +183,14 @@ export default function EmailPage() {
           </div>
         )}
       </div>
+
+      {/* Email Compose Modal */}
+      {showCompose && (
+        <EmailComposeForm
+          onClose={() => setShowCompose(false)}
+          onSuccess={handleEmailSent}
+        />
+      )}
     </div>
   )
 }

@@ -1,10 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, TrendingDown, DollarSign, Users, Plus } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
+import { PortfolioForm } from "@/components/forms/portfolio-form"
 
 // Demo portfolio companies only for admin
 const demoPortfolioCompanies = [
@@ -53,8 +55,17 @@ const demoPortfolioCompanies = [
 export default function PortfolioPage() {
   const { data: session } = useSession()
   const isAdmin = session?.user?.email === 'admin@demo.com'
+  const [showPortfolioForm, setShowPortfolioForm] = useState(false)
+  const [selectedPortfolio, setSelectedPortfolio] = useState(null)
   
   const portfolioCompanies = isAdmin ? demoPortfolioCompanies : []
+
+  const handlePortfolioSuccess = () => {
+    // Refresh portfolio list
+    alert('Portfolio company saved successfully!')
+    setShowPortfolioForm(false)
+    setSelectedPortfolio(null)
+  }
   
   const totalInvestment = portfolioCompanies.reduce((sum, company) => sum + company.investment, 0)
   const totalCurrentValue = portfolioCompanies.reduce((sum, company) => sum + company.currentValue, 0)
@@ -67,7 +78,7 @@ export default function PortfolioPage() {
           <h1 className="text-3xl font-bold mb-2">Portfolio</h1>
           <p className="text-gray-600">Track your portfolio company performance</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowPortfolioForm(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Company
         </Button>
@@ -168,10 +179,22 @@ export default function PortfolioPage() {
                       <p className="text-sm text-gray-600 mb-1">Growth Rate</p>
                       <p className="font-semibold text-blue-600">+{company.growth}%</p>
                     </div>
-                  </div>
-                </div>
-              )
-            })}
+      </div>
+
+      {/* Portfolio Form Modal */}
+      {showPortfolioForm && (
+        <PortfolioForm
+          portfolio={selectedPortfolio}
+          onClose={() => {
+            setShowPortfolioForm(false)
+            setSelectedPortfolio(null)
+          }}
+          onSuccess={handlePortfolioSuccess}
+        />
+      )}
+    </div>
+  )
+})}
           </div>
         </CardContent>
       </Card>
