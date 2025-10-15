@@ -223,13 +223,18 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
   }
 
   const stopRecording = () => {
+    console.log('Stop recording button clicked')
     if (mediaRecorderRef.current && isRecording) {
+      console.log('Stopping media recorder...')
       mediaRecorderRef.current.stop()
       setIsRecording(false)
       setRecordingTime(0)
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current)
       }
+      console.log('Recording stopped')
+    } else {
+      console.warn('No active recording to stop')
     }
   }
 
