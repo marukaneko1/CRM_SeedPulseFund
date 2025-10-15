@@ -43,12 +43,19 @@ export function CompanyForm({ company, onClose, onSuccess }: CompanyFormProps) {
       const url = company ? `/api/companies/${company.id}` : '/api/companies'
       const method = company ? 'PUT' : 'POST'
 
-      // Convert numbers
+      // Clean up data - convert empty strings to null
       const payload = {
-        ...formData,
+        name: formData.name,
+        website: formData.website || null,
+        industry: formData.industry || null,
+        stage: formData.stage || null,
+        description: formData.description || null,
         foundedYear: formData.foundedYear ? parseInt(formData.foundedYear.toString()) : null,
         teamSize: formData.teamSize ? parseInt(formData.teamSize.toString()) : null,
+        location: formData.location || null,
       }
+
+      console.log('Submitting company data:', payload)
 
       const response = await fetch(url, {
         method,
@@ -58,12 +65,17 @@ export function CompanyForm({ company, onClose, onSuccess }: CompanyFormProps) {
 
       if (!response.ok) {
         const data = await response.json()
+        console.error('API Error:', data)
         throw new Error(data.error || 'Failed to save company')
       }
+
+      const result = await response.json()
+      console.log('Company saved successfully:', result)
 
       onSuccess()
       onClose()
     } catch (err: any) {
+      console.error('Form submission error:', err)
       setError(err.message)
     } finally {
       setLoading(false)

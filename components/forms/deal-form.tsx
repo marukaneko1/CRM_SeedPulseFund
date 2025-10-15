@@ -70,15 +70,19 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
       const url = deal ? `/api/deals/${deal.id}` : '/api/deals'
       const method = deal ? 'PUT' : 'POST'
 
-      // Convert numbers and format data
+      // Clean up data - convert empty strings to null
       const payload = {
-        ...formData,
+        title: formData.title,
         amount: formData.amount ? parseFloat(formData.amount.toString()) : null,
+        stage: formData.stage,
         probability: parseInt(formData.probability.toString()),
         expectedCloseDate: formData.expectedCloseDate || null,
-        companyId: formData.companyId || null,
-        contactId: formData.contactId || null,
+        notes: formData.notes || null,
+        companyId: formData.companyId || null,  // Convert empty string to null
+        contactId: formData.contactId || null,  // Convert empty string to null
       }
+
+      console.log('Submitting deal data:', payload)
 
       const response = await fetch(url, {
         method,
@@ -88,12 +92,17 @@ export function DealForm({ deal, onClose, onSuccess }: DealFormProps) {
 
       if (!response.ok) {
         const data = await response.json()
+        console.error('API Error:', data)
         throw new Error(data.error || 'Failed to save deal')
       }
+
+      const result = await response.json()
+      console.log('Deal saved successfully:', result)
 
       onSuccess()
       onClose()
     } catch (err: any) {
+      console.error('Form submission error:', err)
       setError(err.message)
     } finally {
       setLoading(false)

@@ -61,20 +61,40 @@ export function ContactForm({ contact, onClose, onSuccess }: ContactFormProps) {
       const url = contact ? `/api/contacts/${contact.id}` : '/api/contacts'
       const method = contact ? 'PUT' : 'POST'
 
+      // Clean up data - convert empty strings to null for optional fields
+      const cleanedData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone || null,
+        position: formData.position || null,
+        linkedin: formData.linkedin || null,
+        twitter: formData.twitter || null,
+        notes: formData.notes || null,
+        companyId: formData.companyId || null,  // Convert empty string to null
+      }
+
+      console.log('Submitting contact data:', cleanedData)
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(cleanedData),
       })
 
       if (!response.ok) {
         const data = await response.json()
+        console.error('API Error:', data)
         throw new Error(data.error || 'Failed to save contact')
       }
+
+      const result = await response.json()
+      console.log('Contact saved successfully:', result)
 
       onSuccess()
       onClose()
     } catch (err: any) {
+      console.error('Form submission error:', err)
       setError(err.message)
     } finally {
       setLoading(false)
