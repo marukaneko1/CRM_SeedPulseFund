@@ -1,52 +1,109 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar, Clock, Plus, Check, Trash2, AlertCircle } from "lucide-react"
-
+import { Calendar as CalendarIcon, Clock, Plus, Check, Trash2, AlertCircle } from "lucide-react"
 import { useSession } from "next-auth/react"
 
-// Demo reminders only for admin
-const demoReminders = [
-  {
-    id: 1,
-    title: "Follow up with Helix CEO",
-    description: "Discuss Series A timeline",
-    dueDate: "2025-10-15",
-    dueTime: "10:00 AM",
-    priority: "high",
-    completed: false,
-    category: "follow-up"
-  },
-  {
-    id: 2,
-    title: "Send investment memo",
-    description: "Complete due diligence for OpenAI deal",
-    dueDate: "2025-10-16",
-    dueTime: "2:00 PM",
-    priority: "urgent",
-    completed: false,
-    category: "task"
-  },
-]
+interface Reminder {
+  id: string
+  title: string
+  description?: string
+  reminderDate: string
+  completed: boolean
+  createdAt: string
+}
 
 export default function RemindersPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
-  const [reminders, setReminders] = useState(isAdmin ? demoReminders : [])
+  const [reminders, setReminders] = useState<Reminder[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [filter, setFilter] = useState<"all" | "active" | "completed">("active")
+  const [loading, setLoading] = useState(true)
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    reminderDate: '',
+  })
 
-  const toggleComplete = (id: number) => {
-    setReminders(prev =>
-      prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r)
-    )
+  useEffect(() => {
+    fetchReminders()
+  }, [session])
+
+  const fetchReminders = async () => {
+    try {
+      const response = await fetch('/api/reminders')
+      if (response.ok) {
+        const data = await response.json()
+        setReminders(data)
+      }
+    } catch (error) {
+      console.error('Error fetching reminders:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const deleteReminder = (id: number) => {
-    setReminders(prev => prev.filter(r => r.id !== id))
+  const toggleComplete = async (id: string) => {
+    const reminder = reminders.find(r => r.id === id)
+    if (!reminder) return
+
+    try {
+      const response = await fetch(`/api/reminders/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !reminder.completed })
+      })
+
+      if (response.ok) {
+        setReminders(prev =>
+          prev.map(r => r.id === id ? { ...r, completed: !r.completed } : r)
+        )
+      }
+    } catch (error) {
+      console.error('Error toggling reminder:', error)
+    }
+  }
+
+  const deleteReminder = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this reminder?')) return
+
+    try {
+      const response = await fetch(`/api/reminders/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setReminders(prev => prev.filter(r => r.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting reminder:', error)
+    }
+  }
+
+  const handleCreateReminder = async () => {
+    if (!formData.title.trim() || !formData.reminderDate) {
+      alert('Please enter a title and date')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      if (response.ok) {
+        const newReminder = await response.json()
+        setReminders(prev => [newReminder, ...prev])
+        setFormData({ title: '', description: '', reminderDate: '' })
+        setShowAddForm(false)
+      }
+    } catch (error) {
+      console.error('Error creating reminder:', error)
+    }
   }
 
   const getPriorityColor = (priority: string) => {
@@ -92,14 +149,23 @@ export default function RemindersPage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold mb-4">New Reminder</h2>
             <div className="space-y-4">
-              <Input placeholder="Title" />
-              <Input placeholder="Description" />
-              <div className="grid grid-cols-2 gap-4">
-                <Input type="date" />
-                <Input type="time" />
-              </div>
+              <Input 
+                placeholder="Title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+              <Input 
+                placeholder="Description"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+              <Input 
+                type="datetime-local"
+                value={formData.reminderDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, reminderDate: e.target.value }))}
+              />
               <div className="flex gap-2">
-                <Button>Save</Button>
+                <Button onClick={handleCreateReminder}>Save</Button>
                 <Button variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
               </div>
             </div>
@@ -132,7 +198,7 @@ export default function RemindersPage() {
 
         {/* Reminders List */}
         <div className="space-y-3">
-          {filteredReminders.map((reminder) => (
+          {filteredReminders.length > 0 ? filteredReminders.map((reminder) => (
             <div
               key={reminder.id}
               className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md ${
