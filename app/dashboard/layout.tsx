@@ -34,7 +34,6 @@ import {
   Scale,
   Network,
   ClipboardCheck,
-  Fundraising,
   PieChart,
 } from "lucide-react"
 
@@ -68,7 +67,7 @@ const getDynamicNavigation = (isAdmin: boolean) => [
   
   { type: "separator" },
   { type: "section", name: "INVESTOR RELATIONS" },
-  { name: "Fundraising", href: "/dashboard/fundraising", icon: Fundraising },
+  { name: "Fundraising", href: "/dashboard/fundraising", icon: TrendingUp },
   { name: "LP Portal", href: "/dashboard/lp-portal", icon: PieChart },
   { name: "Reporting", href: "/dashboard/reporting", icon: BarChart3 },
   
