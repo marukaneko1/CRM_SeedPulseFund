@@ -33,12 +33,79 @@ export default function CalendarPage() {
   const [googleConnected, setGoogleConnected] = useState(false)
   const [calendlyConnected, setCalendlyConnected] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  
+  // Admin-only features
+  const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.email === 'admin@demo.com'
+  const [showAllUsersCalendars, setShowAllUsersCalendars] = useState(false)
+  const [teamEvents, setTeamEvents] = useState<{userId: string, userName: string, events: CalendarEvent[]}[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
+  const [autoRefresh, setAutoRefresh] = useState(true)
 
   // Set date on client side only to avoid hydration mismatch
   useEffect(() => {
     setSelectedDate(new Date().toISOString().split('T')[0])
     generateCalendarDays(new Date())
   }, [])
+  
+  // Auto-refresh events every 30 seconds for admin
+  useEffect(() => {
+    if (!isAdmin || !autoRefresh) return
+    
+    const interval = setInterval(() => {
+      fetchAllUsersEvents()
+    }, 30000) // 30 seconds
+    
+    return () => clearInterval(interval)
+  }, [isAdmin, autoRefresh, session])
+  
+  // Fetch all users' events (admin only)
+  const fetchAllUsersEvents = async () => {
+    if (!isAdmin) return
+    
+    try {
+      const response = await fetch('/api/calendar/team')
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Check for new events and show notification
+        if (teamEvents.length > 0) {
+          const oldEventIds = new Set(teamEvents.flatMap(u => u.events.map(e => e.id)))
+          const newEvents = data.flatMap((u: any) => u.events).filter((e: any) => !oldEventIds.has(e.id))
+          
+          if (newEvents.length > 0) {
+            // Show notification for new events
+            showNewEventNotification(newEvents[0])
+          }
+        }
+        
+        setTeamEvents(data)
+      }
+    } catch (error) {
+      console.error('Error fetching team events:', error)
+    }
+  }
+  
+  // Show browser notification for new calendar event
+  const showNewEventNotification = (event: any) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('New Calendar Event', {
+        body: `${event.userName} added: ${event.title}`,
+        icon: '/favicon.ico',
+        tag: event.id
+      })
+    }
+    
+    // Also show in-app notification
+    const audio = new Audio('/notification.mp3')
+    audio.play().catch(() => {}) // Ignore if sound fails
+  }
+  
+  // Request notification permission
+  useEffect(() => {
+    if (isAdmin && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [isAdmin])
   
   // Generate calendar days for the mini calendar
   const generateCalendarDays = (date: Date) => {
@@ -93,7 +160,8 @@ export default function CalendarPage() {
   
   const hasEvents = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0]
-    return events.some(e => e.startTime.split('T')[0] === dateStr)
+    const combined = getCombinedEvents()
+    return combined.some(e => e.startTime.split('T')[0] === dateStr)
   }
   
   const isCurrentMonth = (date: Date) => {
@@ -118,8 +186,13 @@ export default function CalendarPage() {
 
     if (session) {
       fetchEvents()
+      
+      // Also fetch team calendars if admin
+      if (isAdmin) {
+        fetchAllUsersEvents()
+      }
     }
-  }, [session])
+  }, [session, isAdmin])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -130,6 +203,32 @@ export default function CalendarPage() {
     const date = new Date(dateString)
     return date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
   }
+  
+  // Get combined events (own + selected team members)
+  const getCombinedEvents = () => {
+    let combined = [...events]
+    
+    // Add selected team members' events
+    if (isAdmin && selectedUsers.length > 0) {
+      teamEvents.forEach(userCal => {
+        if (selectedUsers.includes(userCal.userId)) {
+          const teamEventsWithUser = userCal.events.map(e => ({
+            ...e,
+            teamMemberName: userCal.userName,
+            isTeamEvent: true
+          }))
+          combined = [...combined, ...teamEventsWithUser]
+        }
+      })
+    }
+    
+    // Sort by start time
+    combined.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+    
+    return combined
+  }
+  
+  const displayEvents = getCombinedEvents()
   
   // Integration handlers
   const connectGoogleCalendar = async () => {
@@ -300,17 +399,19 @@ export default function CalendarPage() {
           {/* Quick Stats */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">This Month</CardTitle>
+              <CardTitle className="text-sm">
+                {selectedUsers.length > 0 ? 'Combined Stats' : 'My Calendar'}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Events</span>
-                  <span className="font-semibold">{events.length}</span>
+                  <span className="font-semibold">{displayEvents.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">This Week</span>
-                  <span className="font-semibold">{events.filter(e => {
+                  <span className="font-semibold">{displayEvents.filter(e => {
                     const eventDate = new Date(e.startTime)
                     const today = new Date()
                     const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
@@ -319,10 +420,21 @@ export default function CalendarPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Today</span>
-                  <span className="font-semibold">{events.filter(e => 
+                  <span className="font-semibold">{displayEvents.filter(e => 
                     e.startTime.split('T')[0] === new Date().toISOString().split('T')[0]
                   ).length}</span>
                 </div>
+                {isAdmin && selectedUsers.length > 0 && (
+                  <>
+                    <div className="border-t pt-2 mt-2"></div>
+                    <div className="flex justify-between text-purple-600">
+                      <span>Team Events</span>
+                      <span className="font-semibold">
+                        {displayEvents.filter((e: any) => e.isTeamEvent).length}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -338,7 +450,12 @@ export default function CalendarPage() {
                   : 'All Events'}
               </CardTitle>
               <span className="text-sm text-gray-600">
-                {events.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length} events
+                {displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length} events
+                {selectedUsers.length > 0 && (
+                  <span className="ml-2 text-blue-600">
+                    (including {selectedUsers.length} team member{selectedUsers.length > 1 ? 's' : ''})
+                  </span>
+                )}
               </span>
             </div>
           </CardHeader>
@@ -347,16 +464,24 @@ export default function CalendarPage() {
               <div className="text-center py-8">
                 <p className="text-gray-500">Loading events...</p>
               </div>
-            ) : events.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length > 0 ? (
+            ) : displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length > 0 ? (
               <div className="space-y-4">
-                {events.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).map((event) => (
+                {displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).map((event: any) => (
                   <div
                     key={event.id}
-                    className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${
+                      event.isTeamEvent ? 'border-l-4 border-l-purple-500' : 'border-l-4 border-l-blue-500'
+                    }`}
                   >
-                    <div className="w-1 h-full bg-blue-500 rounded" />
                     <div className="flex-1">
-                      <h3 className="font-semibold mb-1">{event.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold">{event.title}</h3>
+                        {event.isTeamEvent && (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                            {event.teamMemberName}
+                          </span>
+                        )}
+                      </div>
                       {event.description && (
                         <p className="text-sm text-gray-600 mb-2">{event.description}</p>
                       )}
@@ -483,6 +608,118 @@ export default function CalendarPage() {
           </div>
         </Card>
       </div>
+
+      {/* Admin Only - Team Calendars */}
+      {isAdmin && (
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Team Calendars</CardTitle>
+                  <p className="text-sm text-gray-600 mt-1">View and monitor all team members' calendars</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={autoRefresh}
+                      onChange={(e) => setAutoRefresh(e.target.checked)}
+                      className="rounded"
+                    />
+                    Auto-refresh (30s)
+                  </label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchAllUsersEvents}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh Now
+                  </Button>
+                  <Button
+                    variant={showAllUsersCalendars ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowAllUsersCalendars(!showAllUsersCalendars)}
+                  >
+                    {showAllUsersCalendars ? 'Hide' : 'Show'} Team Calendars
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            {showAllUsersCalendars && (
+              <CardContent>
+                {teamEvents.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Click "Refresh Now" to load team calendars</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {teamEvents.map((userCalendar) => (
+                      <div key={userCalendar.userId} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-semibold">
+                                {userCalendar.userName.charAt(0)}
+                              </span>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold">{userCalendar.userName}</h3>
+                              <p className="text-sm text-gray-600">
+                                {userCalendar.events.length} events this month
+                              </p>
+                            </div>
+                          </div>
+                          <label className="flex items-center gap-2 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.includes(userCalendar.userId)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedUsers([...selectedUsers, userCalendar.userId])
+                                } else {
+                                  setSelectedUsers(selectedUsers.filter(id => id !== userCalendar.userId))
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            Show in main calendar
+                          </label>
+                        </div>
+                        
+                        {/* User's upcoming events */}
+                        <div className="space-y-2">
+                          {userCalendar.events.slice(0, 3).map((event) => (
+                            <div
+                              key={event.id}
+                              className="flex items-center gap-3 p-2 bg-gray-50 rounded text-sm"
+                            >
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <div className="flex-1">
+                                <span className="font-medium">{event.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-gray-600">
+                                <Clock className="w-3 h-3" />
+                                {formatTime(event.startTime)}
+                              </div>
+                            </div>
+                          ))}
+                          {userCalendar.events.length > 3 && (
+                            <p className="text-xs text-gray-500 pl-5">
+                              +{userCalendar.events.length - 3} more events
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            )}
+          </Card>
+        </div>
+      )}
 
       {/* Event Form Modal */}
       {showEventForm && (
