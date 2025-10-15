@@ -32,6 +32,10 @@ model User {
   directChats2  DirectChat[] @relation("DirectChatUser2")
   pollVotes     PollVote[]
   eventAttendees EventAttendee[]
+  tasks         Task[]
+  notifications Notification[]
+  reminders     Reminder[]
+  files         File[]
   
   @@map("users")
 }
@@ -343,5 +347,78 @@ model Activity {
   createdAt   DateTime     @default(now())
   
   @@map("activities")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  category    String?
+  assignedTo  String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  dealId      String?
+  contactId   String?
+  companyId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+  
+  @@map("tasks")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  type      String    // EMAIL, MEETING, DEAL, MESSAGE, TASK, REMINDER
+  title     String
+  message   String
+  priority  String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  read      Boolean   @default(false)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  linkUrl   String?
+  createdAt DateTime  @default(now())
+  readAt    DateTime?
+  
+  @@map("notifications")
+}
+
+model Reminder {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  reminderDate DateTime
+  completed   Boolean   @default(false)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  dealId      String?
+  contactId   String?
+  eventId     String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  
+  @@map("reminders")
+}
+
+model File {
+  id          String    @id @default(cuid())
+  name        String
+  originalName String
+  fileType    String
+  fileSize    Int
+  fileUrl     String
+  folder      String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  dealId      String?
+  contactId   String?
+  companyId   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("files")
 }
 
