@@ -109,7 +109,7 @@ export default function DealsPage() {
         <div className="flex gap-4 min-w-max">
           {stages.map((stage) => {
             const stageDeals = getDealsByStage(stage.id)
-            const totalValue = stageDeals.reduce((sum, deal) => sum + deal.amount, 0)
+            const totalValue = stageDeals.reduce((sum, deal) => sum + (deal.amount || 0), 0)
             
             return (
               <div key={stage.id} className="w-80 flex-shrink-0">

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Mail, Phone, Building, Edit2, Trash2 } from "lucide-react"
 import { ContactForm } from "@/components/forms/contact-form"
+import { BulkActions } from "@/components/bulk-actions"
 
 interface Contact {
   id: string
@@ -73,6 +74,34 @@ export default function ContactsPage() {
     }
   }
 
+  const handleBulkImport = async (importedContacts: any[]) => {
+    try {
+      const response = await fetch('/api/contacts/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contacts: importedContacts }),
+      })
+
+      if (response.ok) {
+        await fetchContacts()
+      } else {
+        throw new Error('Import failed')
+      }
+    } catch (error) {
+      console.error('Error importing contacts:', error)
+      throw error
+    }
+  }
+
+  const exportColumns = [
+    { key: 'firstName', label: 'First Name' },
+    { key: 'lastName', label: 'Last Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'position', label: 'Position' },
+    { key: 'company.name', label: 'Company' },
+  ]
+
   const filteredContacts = contacts.filter(contact =>
     `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     contact.company?.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -83,12 +112,20 @@ export default function ContactsPage() {
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold mb-2">Contacts</h1>
-          <p className="text-gray-600">Manage your contacts and relationships</p>
+          <p className="text-gray-600">{contacts.length} contacts in your network</p>
         </div>
-        <Button onClick={handleAddContact}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Contact
-        </Button>
+        <div className="flex gap-2">
+          <BulkActions
+            data={contacts}
+            columns={exportColumns}
+            entityName="contacts"
+            onImport={handleBulkImport}
+          />
+          <Button onClick={handleAddContact}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Contact
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

@@ -122,7 +122,7 @@ export default function MessagesPage() {
                 onClick={() => setSelectedChannel(channel)}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded flex items-center gap-2 transition-colors",
-                  selectedChannel.id === channel.id
+                  selectedChannel?.id === channel.id
                     ? "bg-blue-600"
                     : "hover:bg-gray-800"
                 )}
@@ -139,13 +139,15 @@ export default function MessagesPage() {
       <div className="flex-1 flex flex-col bg-white">
         {/* Channel Header */}
         <div className="border-b px-6 py-4">
-          <div className="flex items-center gap-2">
-            <Hash className="w-5 h-5" />
-            <div>
-              <h3 className="font-semibold">{selectedChannel.name}</h3>
-              <p className="text-sm text-gray-600">{selectedChannel.description}</p>
+          {selectedChannel && (
+            <div className="flex items-center gap-2">
+              <Hash className="w-5 h-5" />
+              <div>
+                <h3 className="font-semibold">{selectedChannel.name}</h3>
+                <p className="text-sm text-gray-600">{selectedChannel.description}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Messages */}
@@ -195,10 +197,11 @@ export default function MessagesPage() {
             <Input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Message #${selectedChannel.name}`}
+              placeholder={`Message #${selectedChannel?.name || 'channel'}`}
               onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              disabled={!selectedChannel}
             />
-            <Button onClick={handleSendMessage}>
+            <Button onClick={handleSendMessage} disabled={!selectedChannel}>
               <Send className="w-4 h-4" />
             </Button>
           </div>
