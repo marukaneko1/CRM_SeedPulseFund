@@ -31,7 +31,7 @@ export function useRealtimeMessages(channelId?: string, directChatId?: string) {
     wsManager.connect()
 
     const checkConnection = () => {
-      setIsConnected(wsManager.isSocketConnected())
+      setIsConnected(wsManager.isSocketConnected() || false)
     }
 
     checkConnection()
