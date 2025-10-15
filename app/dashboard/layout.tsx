@@ -119,13 +119,16 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Update Banner */}
-      <UpdateBanner />
-      
       {/* Left Sidebar */}
       <div className="w-80 bg-gray-900 text-white flex flex-col">
         {/* Header */}
-          <div className="p-6 border-b border-gray-700">
+          <div className="border-b border-gray-700">
+            {/* Update Banner */}
+            <div className="pt-3">
+              <UpdateBanner />
+            </div>
+            
+            <div className="px-6 pb-6">
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -231,6 +234,7 @@ export default function DashboardLayout({
                 </div>
               </div>
             )}
+            </div>
           </div>
 
         {/* Navigation */}
