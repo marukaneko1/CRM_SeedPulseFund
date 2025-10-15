@@ -398,7 +398,7 @@ export default function DirectMessagesPage() {
 
       {/* New Chat Modal */}
       {showNewChat && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
@@ -408,31 +408,37 @@ export default function DirectMessagesPage() {
                 </Button>
               </div>
               
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-                    onClick={() => startNewChat(user.id)}
-                  >
-                    <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
-                      {user.avatar ? (
-                        <img 
-                          src={user.avatar} 
-                          alt={user.name}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        user.name.charAt(0).toUpperCase()
-                      )}
+              {users.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
+                      onClick={() => startNewChat(user.id)}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                        {user.avatar ? (
+                          <img 
+                            src={user.avatar} 
+                            alt={user.name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          user.name.charAt(0).toUpperCase()
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading users...</p>
+                </div>
+              )}
             </div>
           </Card>
         </div>

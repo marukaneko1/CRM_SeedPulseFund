@@ -22,7 +22,7 @@ interface MessageItemProps {
     type: string
     sender: {
       id: string
-      name: string
+      name: string | null
       avatar?: string
     }
     attachments?: Array<{
@@ -313,18 +313,18 @@ export function MessageItem({ message, onVotePoll, onRespondToEvent }: MessageIt
         {message.sender.avatar ? (
           <img 
             src={message.sender.avatar} 
-            alt={message.sender.name}
+            alt={message.sender.name || 'User'}
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
-          message.sender.name.charAt(0).toUpperCase()
+          (message.sender.name || 'U').charAt(0).toUpperCase()
         )}
       </div>
 
       {/* Message Content */}
       <div className={`flex-1 max-w-[70%] ${isOwnMessage ? 'order-1' : ''}`}>
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-semibold text-sm">{message.sender.name}</span>
+          <span className="font-semibold text-sm">{message.sender.name || 'Unknown User'}</span>
           <span className="text-xs text-gray-500">{formatTime(message.createdAt)}</span>
         </div>
         

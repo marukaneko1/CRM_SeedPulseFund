@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Send, Hash, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MessageComposer } from "@/components/messaging/message-composer"
+import { MessageItem } from "@/components/messaging/message-item"
 
 interface Channel {
   id: string
@@ -19,12 +21,51 @@ interface Channel {
 
 interface Message {
   id: string
-  content: string
+  content?: string
+  type: string
   createdAt: string
   sender: {
     id: string
     name: string | null
     email: string
+    avatar?: string
+  }
+  attachments?: Array<{
+    id: string
+    filename: string
+    fileType: string
+    fileUrl: string
+  }>
+  poll?: {
+    id: string
+    question: string
+    options: Array<{
+      id: string
+      text: string
+      votes: Array<{
+        user: {
+          id: string
+          name: string
+        }
+      }>
+    }>
+    expiresAt?: string
+  }
+  event?: {
+    id: string
+    title: string
+    description?: string
+    startDate: string
+    endDate?: string
+    location?: string
+    attendees: Array<{
+      id: string
+      status: string
+      user: {
+        id: string
+        name: string
+      }
+    }>
   }
 }
 
@@ -33,7 +74,6 @@ export default function MessagesPage() {
   const [channels, setChannels] = useState<Channel[]>([])
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
-  const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(true)
 
   // Fetch channels
@@ -60,7 +100,7 @@ export default function MessagesPage() {
     }
   }, [session])
 
-  // Fetch messages when channel changes
+  // Fetch messages for selected channel
   useEffect(() => {
     async function fetchMessages() {
       if (!selectedChannel) return
@@ -81,32 +121,76 @@ export default function MessagesPage() {
     }
   }, [selectedChannel])
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || !selectedChannel) return
-    
+  const handleSendMessage = async (messageData: any) => {
+    if (!selectedChannel) return
+
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: message,
-          channelId: selectedChannel.id,
-        }),
+          ...messageData,
+          channelId: selectedChannel.id
+        })
       })
 
       if (response.ok) {
         const newMessage = await response.json()
-        setMessages([...messages, newMessage])
-        setMessage("")
+        setMessages(prev => [...prev, newMessage])
       }
     } catch (error) {
       console.error('Error sending message:', error)
     }
   }
 
-  const formatMessageTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const handleVotePoll = async (pollId: string, optionId: string) => {
+    try {
+      const response = await fetch('/api/polls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pollId, optionId })
+      })
+
+      if (response.ok) {
+        // Refresh messages to show updated poll results
+        const messagesResponse = await fetch(`/api/messages?channelId=${selectedChannel?.id}`)
+        if (messagesResponse.ok) {
+          const updatedMessages = await messagesResponse.json()
+          setMessages(updatedMessages)
+        }
+      }
+    } catch (error) {
+      console.error('Error voting on poll:', error)
+    }
+  }
+
+  const handleRespondToEvent = async (eventId: string, status: string) => {
+    try {
+      const response = await fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId, status })
+      })
+
+      if (response.ok) {
+        // Refresh messages to show updated event responses
+        const messagesResponse = await fetch(`/api/messages?channelId=${selectedChannel?.id}`)
+        if (messagesResponse.ok) {
+          const updatedMessages = await messagesResponse.json()
+          setMessages(updatedMessages)
+        }
+      }
+    } catch (error) {
+      console.error('Error responding to event:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading channels...</p>
+      </div>
+    )
   }
 
   return (
@@ -151,64 +235,37 @@ export default function MessagesPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto">
           {messages.length > 0 ? (
-            messages.map((msg) => {
-              const senderName = msg.sender.name || msg.sender.email.split('@')[0]
-              const initials = senderName.split(' ').map(n => n.charAt(0)).join('').toUpperCase().slice(0, 2)
-              const isCurrentUser = msg.sender.id === session?.user?.id
-
-              return (
-                <div key={msg.id} className="flex gap-3">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full text-white flex items-center justify-center font-semibold",
-                    isCurrentUser ? "bg-green-600" : "bg-blue-600"
-                  )}>
-                    {initials}
-                  </div>
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="font-semibold">
-                        {isCurrentUser ? 'You' : senderName}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatMessageTime(msg.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-gray-700">{msg.content}</p>
-                  </div>
-                </div>
-              )
-            })
+            <div className="space-y-1">
+              {messages.map((message) => (
+                <MessageItem 
+                  key={message.id} 
+                  message={message}
+                  onVotePoll={handleVotePoll}
+                  onRespondToEvent={handleRespondToEvent}
+                />
+              ))}
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-400">
+            <div className="flex items-center justify-center h-full text-gray-500">
               <div className="text-center">
-                <Hash className="w-16 h-16 mx-auto mb-4" />
-                <p>No messages in this channel yet</p>
-                <p className="text-sm mt-2">Be the first to say something!</p>
+                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-semibold">No messages yet</p>
+                <p className="text-sm">Start the conversation below</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Message Input */}
-        <div className="border-t p-4">
-          <div className="flex gap-2">
-            <Input
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Message #${selectedChannel?.name || 'channel'}`}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              disabled={!selectedChannel}
-            />
-            <Button onClick={handleSendMessage} disabled={!selectedChannel}>
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        {selectedChannel && (
+          <MessageComposer 
+            onSendMessage={handleSendMessage} 
+            channelId={selectedChannel.id} 
+          />
+        )}
       </div>
     </div>
   )
 }
-
-
