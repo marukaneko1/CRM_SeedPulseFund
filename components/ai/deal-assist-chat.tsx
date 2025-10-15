@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { AIActionsMenu } from '@/components/ai/ai-actions-menu'
 import { 
   Send, 
   Sparkles, 
@@ -142,14 +143,25 @@ What would you like assistance with today?`
     <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 to-purple-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">AI Deal Assistant</h2>
+              <p className="text-sm text-gray-600">Powered by GPT-4o • Specialized in VC & Finance</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">AI Deal Assistant</h2>
-            <p className="text-sm text-gray-600">Powered by GPT-4 Turbo • Specialized in VC & Finance</p>
-          </div>
+          <AIActionsMenu 
+            context={{
+              companyName: 'Sample Company',
+              industry: 'Technology'
+            }}
+            onActionComplete={(result) => {
+              console.log('AI Action completed:', result)
+            }}
+          />
         </div>
       </div>
 
