@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
         data: {
           subject,
           body: emailBody,
-          from: process.env.EMAIL_FROM || '',
-          to: Array.isArray(to) ? to : [to],
+          from: process.env.EMAIL_FROM || 'noreply@seedpulsefund.com',
+          to: Array.isArray(to) ? to.join(',') : to,
           status: 'SENT',
           sentAt: new Date(),
           senderId,

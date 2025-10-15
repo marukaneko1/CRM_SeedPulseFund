@@ -2,6 +2,55 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+// Generic email sending function
+export interface EmailOptions {
+  to: string | string[]
+  subject: string
+  html: string
+  text?: string
+}
+
+export async function sendEmail(options: EmailOptions) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'VS CRM <noreply@seedpulsefund.com>',
+      to: Array.isArray(options.to) ? options.to : [options.to],
+      subject: options.subject,
+      html: options.html,
+      text: options.text,
+    })
+
+    if (error) {
+      console.error('Error sending email:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error sending email:', error)
+    return { success: false, error }
+  }
+}
+
+export async function sendBulkEmail(recipients: string[], subject: string, html: string) {
+  const results = []
+  
+  for (const recipient of recipients) {
+    try {
+      const result = await sendEmail({
+        to: recipient,
+        subject,
+        html,
+      })
+      results.push({ recipient, success: true, data: result.data })
+    } catch (error: any) {
+      results.push({ recipient, success: false, error: error.message })
+    }
+  }
+  
+  return results
+}
+
 export async function sendVerificationEmail(email: string, name: string, userId: string) {
   try {
     const verificationUrl = `${process.env.NEXTAUTH_URL}/auth/verify-email?token=${userId}`

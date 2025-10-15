@@ -101,7 +101,7 @@ export default function WatchingPage() {
               Watching
             </h1>
             <p className="text-gray-600 mt-1">
-              {items.length} item{items.length !== 1 ? 's' : ''} you're tracking
+              {items.length} item{items.length !== 1 ? 's' : ''} you&apos;re tracking
             </p>
           </div>
           <Button>

@@ -63,9 +63,9 @@ export default function DealAssistPage() {
           </div>
         </div>
 
-        <div className="text-center text-sm text-gray-500">
-          <p>💡 Tip: Try asking "What are my top 3 deals by probability?"</p>
-        </div>
+          <div className="text-center text-sm text-gray-500">
+            <p>💡 Tip: Try asking &quot;What are my top 3 deals by probability?&quot;</p>
+          </div>
       </div>
     </div>
   )

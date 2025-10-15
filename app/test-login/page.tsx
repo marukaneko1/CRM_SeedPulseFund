@@ -19,7 +19,7 @@ export default function TestLoginPage() {
       console.log("Test login result:", result)
     } catch (error) {
       console.error("Test login error:", error)
-      setResult({ error: error.message })
+      setResult({ error: error instanceof Error ? error.message : 'Unknown error' })
     }
   }
 

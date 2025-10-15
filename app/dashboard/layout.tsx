@@ -177,7 +177,7 @@ export default function DashboardLayout({
             {showSearch && searchQuery && (
               <div className="absolute top-full left-6 right-6 mt-1 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50 max-h-96 overflow-y-auto">
                 <div className="p-3 border-b border-gray-700">
-                  <p className="text-xs text-gray-400">Search results for "{searchQuery}"</p>
+                  <p className="text-xs text-gray-400">Search results for &quot;{searchQuery}&quot;</p>
                 </div>
                 <div className="p-2">
                   {/* Quick navigation results */}
@@ -185,21 +185,25 @@ export default function DashboardLayout({
                     <p className="text-xs text-gray-400 px-3 py-1 font-semibold">QUICK LINKS</p>
                     {navigation.filter(item => 
                       !item.type && 
+                      item.href &&
                       item.name?.toLowerCase().includes(searchQuery.toLowerCase())
-                    ).slice(0, 5).map((item) => (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className="flex items-center gap-3 px-3 py-2 hover:bg-gray-700 rounded-md text-sm"
-                        onClick={() => {
-                          setShowSearch(false)
-                          setSearchQuery("")
-                        }}
-                      >
-                        <item.icon className="w-4 h-4 text-gray-400" />
-                        <span>{item.name}</span>
-                      </Link>
-                    ))}
+                    ).slice(0, 5).map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.href!}
+                          className="flex items-center gap-3 px-3 py-2 hover:bg-gray-700 rounded-md text-sm"
+                          onClick={() => {
+                            setShowSearch(false)
+                            setSearchQuery("")
+                          }}
+                        >
+                          {Icon && <Icon className="w-4 h-4 text-gray-400" />}
+                          <span>{item.name}</span>
+                        </Link>
+                      )
+                    })}
                   </div>
                   {navigation.filter(item => 
                     !item.type && 
@@ -232,6 +236,8 @@ export default function DashboardLayout({
                 )
               }
 
+              if (!item.href) return null
+              
               const isActive = pathname === item.href
               
               return (
