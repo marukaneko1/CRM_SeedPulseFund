@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Building, Search, Plus, TrendingUp, MapPin, Users, DollarSign } from "lucide-react"
 
-const companies = [
+// Demo companies only for admin
+const demoCompanies = [
   {
     id: 1,
     name: "TechVenture Inc",
@@ -61,8 +63,13 @@ const companies = [
 ]
 
 export default function CompaniesPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStage, setFilterStage] = useState("all")
+  
+  const companies = isAdmin ? demoCompanies : []
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Bell, CheckCheck, Trash2, Mail, Calendar, Users, Briefcase } from "lucide-react"
 
-const notifications = [
+// Demo notifications only for admin user
+const demoNotifications = [
   {
     id: 1,
     type: "email",
@@ -35,30 +37,14 @@ const notifications = [
     read: false,
     priority: "medium"
   },
-  {
-    id: 4,
-    type: "contact",
-    icon: Users,
-    title: "New contact added",
-    message: "Sarah Johnson from Venture Partners",
-    time: "2 hours ago",
-    read: true,
-    priority: "low"
-  },
-  {
-    id: 5,
-    type: "email",
-    icon: Mail,
-    title: "Follow-up required",
-    message: "No response from MetaProp in 7 days",
-    time: "3 hours ago",
-    read: true,
-    priority: "medium"
-  },
 ]
 
 export default function NotificationsPage() {
-  const [notificationList, setNotificationList] = useState(notifications)
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  // Only show demo notifications for admin, empty for new users
+  const [notificationList, setNotificationList] = useState(isAdmin ? demoNotifications : [])
   const [filter, setFilter] = useState<"all" | "unread">("all")
 
   const unreadCount = notificationList.filter(n => !n.read).length

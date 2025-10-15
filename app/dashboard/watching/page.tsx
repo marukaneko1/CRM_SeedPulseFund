@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Eye, Star, Building, Users, Briefcase, TrendingUp } from "lucide-react"
 
-const watchedItems = [
+// Demo watched items only for admin
+const demoWatchedItems = [
   {
     id: 1,
     type: "company",
@@ -63,7 +65,10 @@ const watchedItems = [
 ]
 
 export default function WatchingPage() {
-  const [items, setItems] = useState(watchedItems)
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  const [items, setItems] = useState(isAdmin ? demoWatchedItems : [])
   const [filter, setFilter] = useState<string>("all")
 
   const removeFromWatching = (id: number) => {

@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Calendar, Clock, Plus, Check, Trash2, AlertCircle } from "lucide-react"
 
-const initialReminders = [
+import { useSession } from "next-auth/react"
+
+// Demo reminders only for admin
+const demoReminders = [
   {
     id: 1,
     title: "Follow up with Helix CEO",
@@ -26,30 +29,13 @@ const initialReminders = [
     completed: false,
     category: "task"
   },
-  {
-    id: 3,
-    title: "Review portfolio metrics",
-    description: "Q3 performance review",
-    dueDate: "2025-10-17",
-    dueTime: "9:00 AM",
-    priority: "medium",
-    completed: false,
-    category: "review"
-  },
-  {
-    id: 4,
-    title: "Call with LP investors",
-    description: "Quarterly update",
-    dueDate: "2025-10-14",
-    dueTime: "3:00 PM",
-    priority: "high",
-    completed: true,
-    category: "meeting"
-  },
 ]
 
 export default function RemindersPage() {
-  const [reminders, setReminders] = useState(initialReminders)
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  const [reminders, setReminders] = useState(isAdmin ? demoReminders : [])
   const [showAddForm, setShowAddForm] = useState(false)
   const [filter, setFilter] = useState<"all" | "active" | "completed">("active")
 
