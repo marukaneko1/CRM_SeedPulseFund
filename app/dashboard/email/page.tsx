@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Mail, Send, Inbox, Archive, Star, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { EmailComposeForm } from "@/components/forms/email-compose-form"
 
 // Demo emails only for admin
 const demoEmails = [
@@ -52,6 +53,11 @@ export default function EmailPage() {
   
   const [selectedFolder, setSelectedFolder] = useState(folders[0])
   const [showCompose, setShowCompose] = useState(false)
+
+  const handleEmailSent = () => {
+    // Refresh email list or show success message
+    alert('Email sent successfully!')
+  }
 
   return (
     <div className="h-screen flex">

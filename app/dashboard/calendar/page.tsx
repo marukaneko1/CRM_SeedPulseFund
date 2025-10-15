@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Video, Plus, MapPin, Link as LinkIcon } from "lucide-react"
+import { CalendarEventForm } from "@/components/forms/calendar-event-form"
 
 interface CalendarEvent {
   id: string
@@ -21,6 +22,8 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState("")
+  const [showEventForm, setShowEventForm] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
 
   // Set date on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -65,7 +68,7 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold mb-2">Calendar</h1>
           <p className="text-gray-600">Manage your schedule and meetings</p>
         </div>
-        <Button>
+        <Button onClick={() => setShowEventForm(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Event
         </Button>
@@ -169,6 +172,20 @@ export default function CalendarPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Event Form Modal */}
+      {showEventForm && (
+        <CalendarEventForm
+          event={selectedEvent}
+          onClose={() => {
+            setShowEventForm(false)
+            setSelectedEvent(null)
+          }}
+          onSuccess={() => {
+            fetchEvents()
+          }}
+        />
+      )}
     </div>
   )
 }
