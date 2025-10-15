@@ -13,6 +13,7 @@ interface Company {
   industry?: string
   stage?: string
   description?: string
+  logo?: string
   foundedYear?: number
   teamSize?: number
   location?: string

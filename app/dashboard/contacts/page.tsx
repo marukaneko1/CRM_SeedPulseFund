@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Search, Mail, Phone, Building } from "lucide-react"
+import { Plus, Search, Mail, Phone, Building, Edit2, Trash2 } from "lucide-react"
+import { ContactForm } from "@/components/forms/contact-form"
 
 interface Contact {
   id: string
@@ -25,27 +26,52 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [showForm, setShowForm] = useState(false)
+  const [selectedContact, setSelectedContact] = useState<Contact | undefined>()
 
   // Fetch contacts from API
-  useEffect(() => {
-    async function fetchContacts() {
-      try {
-        const response = await fetch('/api/contacts')
-        if (response.ok) {
-          const data = await response.json()
-          setContacts(data)
-        }
-      } catch (error) {
-        console.error('Error fetching contacts:', error)
-      } finally {
-        setLoading(false)
+  const fetchContacts = async () => {
+    try {
+      const response = await fetch('/api/contacts')
+      if (response.ok) {
+        const data = await response.json()
+        setContacts(data)
       }
+    } catch (error) {
+      console.error('Error fetching contacts:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     if (session) {
       fetchContacts()
     }
   }, [session])
+
+  const handleAddContact = () => {
+    setSelectedContact(undefined)
+    setShowForm(true)
+  }
+
+  const handleEditContact = (contact: Contact) => {
+    setSelectedContact(contact)
+    setShowForm(true)
+  }
+
+  const handleDeleteContact = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this contact?')) return
+    
+    try {
+      const response = await fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        fetchContacts()
+      }
+    } catch (error) {
+      console.error('Error deleting contact:', error)
+    }
+  }
 
   const filteredContacts = contacts.filter(contact =>
     `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -59,7 +85,7 @@ export default function ContactsPage() {
           <h1 className="text-3xl font-bold mb-2">Contacts</h1>
           <p className="text-gray-600">Manage your contacts and relationships</p>
         </div>
-        <Button>
+        <Button onClick={handleAddContact}>
           <Plus className="w-4 h-4 mr-2" />
           Add Contact
         </Button>
@@ -91,7 +117,7 @@ export default function ContactsPage() {
             const fullName = `${contact.firstName} ${contact.lastName}`
             
             return (
-              <Card key={contact.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={contact.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-lg">
@@ -100,6 +126,14 @@ export default function ContactsPage() {
                     <div className="flex-1">
                       <CardTitle className="text-lg mb-1">{fullName}</CardTitle>
                       <p className="text-sm text-gray-600">{contact.position || 'No position'}</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="ghost" onClick={() => handleEditContact(contact)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteContact(contact.id)}>
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -136,12 +170,21 @@ export default function ContactsPage() {
             <p className="text-gray-600 mb-4">
               {searchQuery ? 'No contacts match your search' : 'Add your first contact to get started'}
             </p>
-            <Button>
+            <Button onClick={handleAddContact}>
               <Plus className="w-4 h-4 mr-2" />
               Add Contact
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Contact Form Modal */}
+      {showForm && (
+        <ContactForm
+          contact={selectedContact}
+          onClose={() => setShowForm(false)}
+          onSuccess={() => fetchContacts()}
+        />
       )}
     </div>
   )
