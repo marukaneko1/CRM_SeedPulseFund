@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Clock, Video, Plus, MapPin, Link as LinkIcon, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react"
+import { Calendar, Clock, Video, Plus, MapPin, Link as LinkIcon, ChevronLeft, ChevronRight, RefreshCw, Maximize2, List, Grid } from "lucide-react"
 import { CalendarEventForm } from "@/components/forms/calendar-event-form"
 
 interface CalendarEvent {
@@ -40,6 +40,11 @@ export default function CalendarPage() {
   const [teamEvents, setTeamEvents] = useState<{userId: string, userName: string, events: CalendarEvent[]}[]>([])
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [autoRefresh, setAutoRefresh] = useState(true)
+  
+  // Calendar view mode
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [expandedCalendar, setExpandedCalendar] = useState(false)
+  const [quickAddTime, setQuickAddTime] = useState<{date: string, hour: number} | null>(null)
 
   // Set date on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -310,6 +315,49 @@ export default function CalendarPage() {
       setSyncing(false)
     }
   }
+  
+  // Quick add event inline
+  const handleQuickAddEvent = async (date: string, hour: number) => {
+    const title = prompt('Event title:')
+    if (!title) return
+    
+    const startTime = new Date(date)
+    startTime.setHours(hour, 0, 0, 0)
+    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000) // 1 hour later
+    
+    const newEvent = {
+      title,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+    }
+    
+    try {
+      const response = await fetch('/api/calendar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEvent)
+      })
+      
+      if (response.ok) {
+        // Refresh events
+        const allEvents = await fetch('/api/calendar')
+        if (allEvents.ok) {
+          const data = await allEvents.json()
+          setEvents(data)
+        }
+      }
+    } catch (error) {
+      console.error('Error creating event:', error)
+    }
+  }
+  
+  // Get events for a specific date and hour
+  const getEventsForTimeSlot = (date: string, hour: number) => {
+    return displayEvents.filter(e => {
+      const eventDate = new Date(e.startTime)
+      return e.startTime.split('T')[0] === date && eventDate.getHours() === hour
+    })
+  }
 
   return (
     <div className="p-8 overflow-y-auto max-h-screen">
@@ -319,9 +367,36 @@ export default function CalendarPage() {
           <p className="text-gray-600">Manage your schedule and meetings</p>
         </div>
         <div className="flex gap-2">
+          <div className="flex items-center gap-1 mr-2 border rounded-md p-1 bg-gray-50">
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className="h-8"
+            >
+              <List className="w-4 h-4 mr-1" />
+              List
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className="h-8"
+            >
+              <Grid className="w-4 h-4 mr-1" />
+              Grid
+            </Button>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setExpandedCalendar(!expandedCalendar)}
+          >
+            <Maximize2 className="w-4 h-4 mr-2" />
+            {expandedCalendar ? 'Collapse' : 'Expand'}
+          </Button>
           <Button variant="outline" onClick={syncAllCalendars} disabled={syncing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync Calendars'}
+            {syncing ? 'Syncing...' : 'Sync'}
           </Button>
           <Button onClick={() => setShowEventForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -330,8 +405,110 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-6">
+      {/* Expanded Full Calendar View */}
+      {viewMode === 'grid' && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>
+              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} - Week View
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              {/* Time grid header */}
+              <div className="grid grid-cols-8 gap-px bg-gray-200 border rounded-lg overflow-hidden">
+                {/* Time column */}
+                <div className="bg-white font-semibold text-center py-2 text-sm">Time</div>
+                {/* Day columns */}
+                {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                  const date = new Date(selectedDate || new Date().toISOString().split('T')[0])
+                  date.setDate(date.getDate() - date.getDay() + dayOffset) // Start from Sunday
+                  return (
+                    <div key={dayOffset} className="bg-white text-center py-2">
+                      <div className="font-semibold text-sm">
+                        {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                      </div>
+                      <div className={`text-xs ${isToday(date) ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
+                        {date.getDate()}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* Time slots grid */}
+              <div className="mt-px">
+                {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => (
+                  <div key={hour} className="grid grid-cols-8 gap-px bg-gray-200">
+                    {/* Time label */}
+                    <div className="bg-white px-2 py-3 text-xs text-gray-600 font-medium">
+                      {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                    </div>
+                    
+                    {/* Day cells */}
+                    {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                      const date = new Date(selectedDate || new Date().toISOString().split('T')[0])
+                      date.setDate(date.getDate() - date.getDay() + dayOffset)
+                      const dateStr = date.toISOString().split('T')[0]
+                      const eventsInSlot = getEventsForTimeSlot(dateStr, hour)
+                      
+                      return (
+                        <button
+                          key={`${dateStr}-${hour}`}
+                          onClick={() => handleQuickAddEvent(dateStr, hour)}
+                          className="bg-white hover:bg-blue-50 px-2 py-3 text-left min-h-[60px] relative group transition-colors"
+                        >
+                          {eventsInSlot.length > 0 ? (
+                            <div className="space-y-1">
+                              {eventsInSlot.map(event => (
+                                <div
+                                  key={event.id}
+                                  className={`text-xs p-1 rounded ${
+                                    (event as any).isTeamEvent 
+                                      ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-500' 
+                                      : 'bg-blue-100 text-blue-700 border-l-2 border-blue-500'
+                                  }`}
+                                >
+                                  <div className="font-semibold truncate">{event.title}</div>
+                                  {(event as any).teamMemberName && (
+                                    <div className="text-[10px]">{(event as any).teamMemberName}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-full">
+                              <Plus className="w-4 h-4 text-gray-400" />
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="mt-4 text-xs text-gray-600 flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500"></div>
+                <span>Your events</span>
+              </div>
+              {isAdmin && selectedUsers.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-100 border-l-2 border-purple-500"></div>
+                  <span>Team events</span>
+                </div>
+              )}
+              <span className="ml-auto">Click any time slot to add event</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className={`grid lg:grid-cols-4 gap-6 ${expandedCalendar ? 'lg:grid-cols-1' : ''}`}>
         {/* LEFT SIDEBAR - Mini Calendar */}
+        {!expandedCalendar && (
         <div className="lg:col-span-1 space-y-6">
           {/* Mini Calendar Widget */}
           <Card>
@@ -439,9 +616,10 @@ export default function CalendarPage() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* MAIN CONTENT - Events List */}
-        <Card className="lg:col-span-3">
+        <Card className={expandedCalendar ? 'lg:col-span-4' : 'lg:col-span-3'}>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>
