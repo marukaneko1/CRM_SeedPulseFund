@@ -105,10 +105,13 @@ export default function DirectMessagesPage() {
     }
   }, [showNewChat, session])
 
-  // Fetch messages for selected chat
+  // Fetch messages for selected chat with auto-refresh
   useEffect(() => {
     const fetchMessages = async () => {
-      if (!selectedChat) return
+      if (!selectedChat) {
+        setMessages([])
+        return
+      }
 
       try {
         const response = await fetch(`/api/direct-chats/${selectedChat.id}/messages`)
@@ -122,12 +125,19 @@ export default function DirectMessagesPage() {
     }
 
     fetchMessages()
+    
+    // Poll for new messages every 2 seconds for live updates
+    const interval = setInterval(fetchMessages, 2000)
+    
+    return () => clearInterval(interval)
   }, [selectedChat])
 
   const handleSendMessage = async (messageData: any) => {
     if (!selectedChat) return
 
     try {
+      console.log('Sending message:', messageData)
+      
       const response = await fetch(`/api/direct-chats/${selectedChat.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,6 +146,9 @@ export default function DirectMessagesPage() {
 
       if (response.ok) {
         const newMessage = await response.json()
+        console.log('Message sent successfully:', newMessage)
+        
+        // Immediately update messages list
         setMessages(prev => [...prev, newMessage])
         
         // Update chat list

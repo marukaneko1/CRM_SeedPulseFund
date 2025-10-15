@@ -25,17 +25,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File too large. Maximum size is 10MB.' }, { status: 400 })
     }
 
-    // Validate file type
+    // Validate file type (allow more audio formats for voice messages)
     const allowedTypes = [
       'image/jpeg', 'image/png', 'image/gif', 'image/webp',
       'video/mp4', 'video/webm', 'video/quicktime',
-      'audio/mpeg', 'audio/wav', 'audio/ogg',
+      'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm', 'audio/mp4', 'audio/x-m4a',
       'application/pdf', 'text/plain',
       'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ]
 
-    if (!allowedTypes.includes(file.type)) {
+    // Allow any audio type for voice messages
+    const isAudio = file.type.startsWith('audio/') || file.name.endsWith('.wav') || file.name.endsWith('.webm')
+    
+    if (!allowedTypes.includes(file.type) && !isAudio) {
       return NextResponse.json({ 
         error: 'File type not allowed. Allowed types: images, videos, audio, documents' 
       }, { status: 400 })

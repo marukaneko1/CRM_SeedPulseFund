@@ -112,8 +112,12 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
       }
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
-        const audioFile = new File([audioBlob], 'voice-message.wav', { type: 'audio/wav' })
+        // Use webm format which is better supported
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+        const timestamp = Date.now()
+        const audioFile = new File([audioBlob], `voice-${timestamp}.webm`, { type: 'audio/webm' })
+        
+        console.log('Voice recording stopped, file size:', audioBlob.size)
         
         // Upload voice message
         const formData = new FormData()
@@ -121,21 +125,29 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
         
         setIsUploading(true)
         try {
+          console.log('Uploading voice message...')
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData
           })
           const result = await response.json()
           
+          console.log('Upload response:', result)
+          
           if (response.ok) {
+            console.log('Voice message uploaded, sending...', result)
             onSendMessage({
               type: 'VOICE',
               content: 'Voice message',
               attachments: [result]
             })
+          } else {
+            console.error('Upload failed:', result)
+            alert('Failed to upload voice message: ' + (result.error || 'Unknown error'))
           }
         } catch (error) {
           console.error('Error uploading voice message:', error)
+          alert('Error uploading voice message. Please try again.')
         } finally {
           setIsUploading(false)
         }
