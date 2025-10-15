@@ -396,12 +396,11 @@ export default function CalendarPage() {
               </div>
             )}
           </CardContent>
-        </Card>
-
-        {/* Integrations Section - Moved to bottom of events */}
-        <div className="mt-6 grid md:grid-cols-2 gap-4">
-          {/* Google Calendar Integration */}
-          <Card>
+          
+          {/* Integrations Section */}
+          <div className="mt-6 grid md:grid-cols-2 gap-4 px-6 pb-6">
+            {/* Google Calendar Integration */}
+            <Card>
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 bg-blue-50 rounded flex items-center justify-center flex-shrink-0">
@@ -481,7 +480,7 @@ export default function CalendarPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
         </Card>
       </div>
 
