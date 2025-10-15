@@ -13,7 +13,8 @@ import {
   MessageSquare, 
   BarChart3,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  ArrowLeft
 } from "lucide-react"
 
 const features = [
@@ -85,7 +86,7 @@ export default function OnboardingPage() {
               Welcome to VS CRM! 👋
             </h1>
             <p className="text-gray-600 text-lg">
-              Let's take a quick tour of your new platform
+              Let&apos;s take a quick tour of your new platform
             </p>
           </div>
           <Button onClick={handleSkip} variant="outline" size="lg">
