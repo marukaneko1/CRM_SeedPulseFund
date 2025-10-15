@@ -67,35 +67,52 @@ const mockDocuments: Document[] = [
  * Retrieve relevant documents for a query (Simple keyword matching - Replace with embeddings in production)
  */
 export async function retrieveDocuments(context: RAGContext): Promise<Document[]> {
-  const { query, dealId, companyId, limit = 3 } = context
+  try {
+    const { query, dealId, companyId, limit = 3 } = context
 
-  let filteredDocs = mockDocuments
+    if (!query || query.trim().length === 0) {
+      return []
+    }
 
-  // Filter by dealId or companyId if provided
-  if (dealId) {
-    filteredDocs = filteredDocs.filter(doc => doc.metadata.dealId === dealId)
+    let filteredDocs = [...mockDocuments]
+
+    // Filter by dealId or companyId if provided
+    if (dealId) {
+      filteredDocs = filteredDocs.filter(doc => doc.metadata.dealId === dealId)
+    }
+    if (companyId) {
+      filteredDocs = filteredDocs.filter(doc => doc.metadata.companyId === companyId)
+    }
+
+    // Simple keyword matching (in production, use semantic search with embeddings)
+    const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3)
+    
+    if (keywords.length === 0) {
+      // If no meaningful keywords, return most recent documents
+      return filteredDocs
+        .sort((a, b) => new Date(b.metadata.uploadedAt).getTime() - new Date(a.metadata.uploadedAt).getTime())
+        .slice(0, limit)
+    }
+    
+    const rankedDocs = filteredDocs.map(doc => {
+      const contentLower = (doc.title + ' ' + doc.content).toLowerCase()
+      const score = keywords.reduce((score, keyword) => {
+        const occurrences = (contentLower.match(new RegExp(keyword, 'g')) || []).length
+        return score + occurrences
+      }, 0)
+      return { doc, score }
+    })
+
+    // Sort by relevance and return top results
+    return rankedDocs
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(item => item.doc)
+  } catch (error) {
+    console.error('Error retrieving documents:', error)
+    return []
   }
-  if (companyId) {
-    filteredDocs = filteredDocs.filter(doc => doc.metadata.companyId === companyId)
-  }
-
-  // Simple keyword matching (in production, use semantic search with embeddings)
-  const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3)
-  
-  const rankedDocs = filteredDocs.map(doc => {
-    const contentLower = (doc.title + ' ' + doc.content).toLowerCase()
-    const score = keywords.reduce((score, keyword) => {
-      return score + (contentLower.includes(keyword) ? 1 : 0)
-    }, 0)
-    return { doc, score }
-  })
-
-  // Sort by relevance and return top results
-  return rankedDocs
-    .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(item => item.doc)
 }
 
 /**

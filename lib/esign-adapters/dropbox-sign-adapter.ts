@@ -56,16 +56,32 @@ export class DropboxSignAdapter {
    * Create signature request
    */
   async createSignatureRequest(request: SignatureRequest): Promise<{ requestId: string; status: string }> {
-    // In production, implement Dropbox Sign API calls:
-    // 1. POST to /signature_request/send
-    // 2. Handle response with signature URLs
-    
-    console.log('Dropbox Sign: Creating signature request', request.title)
-    
-    // Mock response
-    return {
-      requestId: `dropbox-sign-${Date.now()}`,
-      status: 'awaiting_signature'
+    try {
+      // Validate request
+      if (!request.title || request.title.trim().length === 0) {
+        throw new Error('Title is required')
+      }
+      if (!request.signers || request.signers.length === 0) {
+        throw new Error('At least one signer is required')
+      }
+      if (!request.files || request.files.length === 0) {
+        throw new Error('At least one file is required')
+      }
+      
+      // In production, implement Dropbox Sign API calls:
+      // 1. POST to /signature_request/send
+      // 2. Handle response with signature URLs
+      
+      console.log('Dropbox Sign: Creating signature request', request.title)
+      
+      // Mock response
+      return {
+        requestId: `dropbox-sign-${Date.now()}`,
+        status: 'awaiting_signature'
+      }
+    } catch (error: any) {
+      console.error('Dropbox Sign createSignatureRequest error:', error)
+      throw new Error(`Failed to create signature request: ${error.message}`)
     }
   }
 

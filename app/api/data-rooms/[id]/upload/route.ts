@@ -58,14 +58,20 @@ export async function POST(
       // 2. Generate secure URLs
       // 3. Store metadata in database
       
+      // Generate unique file ID
+      const timestamp = Date.now()
+      const randomStr = Math.random().toString(36).substring(2, 11)
+      const uniqueId = `${timestamp}-${randomStr}`
+      
       const fileData = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        id: uniqueId,
         name: file.name,
         originalName: file.name,
         size: file.size,
         type: file.type,
-        url: `/uploads/${file.name}`, // Mock URL
+        url: `/uploads/${uniqueId}-${file.name}`, // Unique URL
         uploadedBy: session.user.id,
+        uploadedByEmail: session.user.email || 'Unknown',
         uploadedAt: new Date().toISOString(),
         dataRoomId
       }
@@ -74,11 +80,15 @@ export async function POST(
     }
 
     return NextResponse.json({
+      success: true,
       message: `${uploadedFiles.length} file(s) uploaded successfully`,
       files: uploadedFiles
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading files:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || 'Unknown error'
+    }, { status: 500 })
   }
 }

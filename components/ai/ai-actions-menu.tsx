@@ -118,19 +118,24 @@ export function AIActionsMenu({ context, onActionComplete }: AIActionsMenuProps)
         let accumulatedText = ''
 
         if (reader) {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
+              
+              const chunk = decoder.decode(value, { stream: true })
+              accumulatedText += chunk
+              setResult(accumulatedText)
+            }
             
-            const chunk = decoder.decode(value)
-            accumulatedText += chunk
-            setResult(accumulatedText)
+            onActionComplete?.({ action: actionType, result: accumulatedText })
+          } catch (streamError) {
+            console.error('Stream reading error:', streamError)
+            setResult(accumulatedText || 'Error reading response stream')
           }
         }
-
-        onActionComplete?.({ action: actionType, result: accumulatedText })
       } else {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
         setResult(`Error: ${error.error || 'Failed to generate content'}`)
       }
     } catch (error: any) {

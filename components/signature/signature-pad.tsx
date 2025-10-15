@@ -37,6 +37,8 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
   }, [])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault() // Prevent scrolling on touch devices
+    
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -54,6 +56,7 @@ export function SignaturePad({ onSave, onCancel }: SignaturePadProps) {
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return
+    e.preventDefault() // Prevent scrolling while drawing
 
     const canvas = canvasRef.current
     if (!canvas) return

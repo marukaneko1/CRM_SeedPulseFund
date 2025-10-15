@@ -66,17 +66,25 @@ export function calculateCost(
   inputTokens: number,
   outputTokens: number
 ): number {
+  // Validate inputs
+  if (inputTokens < 0 || outputTokens < 0) {
+    console.warn('Invalid token counts:', { inputTokens, outputTokens })
+    return 0
+  }
+
   const pricing = PRICING[provider]?.[model as keyof typeof PRICING[typeof provider]]
   
   if (!pricing) {
-    console.warn(`No pricing found for ${provider}/${model}`)
-    return 0
+    console.warn(`No pricing found for ${provider}/${model}. Using default pricing.`)
+    // Fallback to average pricing if model not found
+    return ((inputTokens / 1000000) * 2.5) + ((outputTokens / 1000000) * 10)
   }
 
   const inputCost = (inputTokens / 1000000) * pricing.input
   const outputCost = (outputTokens / 1000000) * pricing.output
   
-  return inputCost + outputCost
+  // Round to 6 decimal places to avoid floating point issues
+  return Math.round((inputCost + outputCost) * 1000000) / 1000000
 }
 
 /**

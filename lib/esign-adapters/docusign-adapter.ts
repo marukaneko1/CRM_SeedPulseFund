@@ -73,17 +73,30 @@ export class DocuSignAdapter {
    * Create and send envelope for signing
    */
   async createEnvelope(envelope: Envelope): Promise<{ envelopeId: string; status: string }> {
-    // In production, implement DocuSign API calls:
-    // 1. Get access token using JWT
-    // 2. Create envelope via API
-    // 3. Send envelope to recipients
-    
-    console.log('DocuSign: Creating envelope', envelope.emailSubject)
-    
-    // Mock response
-    return {
-      envelopeId: `docusign-${Date.now()}`,
-      status: 'sent'
+    try {
+      // Validate envelope
+      if (!envelope.documents || envelope.documents.length === 0) {
+        throw new Error('At least one document is required')
+      }
+      if (!envelope.recipients || envelope.recipients.length === 0) {
+        throw new Error('At least one recipient is required')
+      }
+      
+      // In production, implement DocuSign API calls:
+      // 1. Get access token using JWT
+      // 2. Create envelope via API
+      // 3. Send envelope to recipients
+      
+      console.log('DocuSign: Creating envelope', envelope.emailSubject)
+      
+      // Mock response
+      return {
+        envelopeId: `docusign-${Date.now()}`,
+        status: 'sent'
+      }
+    } catch (error: any) {
+      console.error('DocuSign createEnvelope error:', error)
+      throw new Error(`Failed to create envelope: ${error.message}`)
     }
   }
 

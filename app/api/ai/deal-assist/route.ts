@@ -2,6 +2,7 @@ import { streamText, convertToCoreMessages } from 'ai'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getAIModel, handleAIError, isAIAvailable } from '@/lib/ai-provider'
+import { checkRateLimit } from '@/lib/security/sanitize'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -11,6 +12,23 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return new Response('Unauthorized', { status: 401 })
+    }
+
+    // Rate limiting: 20 requests per minute per user
+    const rateLimit = checkRateLimit(`ai-deal-assist-${session.user.id}`, 20, 60000)
+    if (!rateLimit.allowed) {
+      return new Response(JSON.stringify({ 
+        error: 'Too many requests. Please wait a moment and try again.',
+        code: 'RATE_LIMITED',
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+      }), { 
+        status: 429,
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+          'X-RateLimit-Reset': rateLimit.resetTime.toString()
+        }
+      })
     }
 
     // Check if AI is available
@@ -32,6 +50,21 @@ export async function POST(req: Request) {
     if (messages.length === 0) {
       return new Response(JSON.stringify({ 
         error: 'No messages provided. Please send a message to get assistance.' 
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Validate message format and sanitize
+    const sanitizedMessages = messages.map((msg: any) => ({
+      role: msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user',
+      content: typeof msg.content === 'string' ? msg.content.substring(0, 10000) : ''
+    })).filter((msg: any) => msg.content.trim().length > 0)
+
+    if (sanitizedMessages.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'No valid messages provided.' 
       }), { 
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -82,7 +115,7 @@ export async function POST(req: Request) {
 - Always include caveats about the need for verification
 
 **Important:** Always remind users that AI analysis should be verified and professional advice should be sought for final investment decisions.`,
-      messages: convertToCoreMessages(messages),
+      messages: convertToCoreMessages(sanitizedMessages),
       temperature: 0.7,
     })
 
