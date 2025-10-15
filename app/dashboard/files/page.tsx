@@ -72,6 +72,23 @@ const folders = [
   { name: "Financial Models", count: 6, icon: Folder },
 ]
 
+// Helper function to get icon based on file type
+const getFileIcon = (file: any) => {
+  if (file.icon) return file.icon // Use existing icon if available
+  
+  const fileName = (file.name || '').toLowerCase()
+  const fileType = (file.fileType || file.type || '').toLowerCase()
+  
+  if (fileName.includes('.xlsx') || fileName.includes('.xls') || fileType.includes('spreadsheet')) {
+    return FileSpreadsheet
+  }
+  if (fileName.includes('.jpg') || fileName.includes('.png') || fileName.includes('.gif') || fileType.includes('image')) {
+    return ImageIcon
+  }
+  // Default to FileText for PDFs and other documents
+  return FileText
+}
+
 export default function FilesPage() {
   const { data: session } = useSession()
   const [files, setFiles] = useState<any[]>([])
@@ -253,12 +270,14 @@ export default function FilesPage() {
           {/* Files Grid */}
           {filteredFiles.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-4">
-              {filteredFiles.map((file) => (
+              {filteredFiles.map((file) => {
+                const FileIcon = getFileIcon(file)
+                return (
                 <Card key={file.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 bg-blue-50 rounded flex items-center justify-center flex-shrink-0">
-                        <file.icon className="w-5 h-5 text-blue-600" />
+                        <FileIcon className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-sm mb-1 truncate">{file.name}</h3>
@@ -289,7 +308,8 @@ export default function FilesPage() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                )
+              })}
             </div>
           ) : (
             <Card>
