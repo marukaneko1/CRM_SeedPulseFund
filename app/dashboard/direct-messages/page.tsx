@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -64,6 +64,9 @@ export default function DirectMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showNewChat, setShowNewChat] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isTyping, setIsTyping] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch direct chats
   useEffect(() => {
@@ -132,11 +135,44 @@ export default function DirectMessagesPage() {
     return () => clearInterval(interval)
   }, [selectedChat])
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Handle typing indicator
+  const handleTyping = (value: string) => {
+    if (value.trim().length > 0) {
+      setIsTyping(true)
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      
+      // Set timeout to stop typing
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false)
+      }, 2000)
+    } else {
+      setIsTyping(false)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+  }
+
   const handleSendMessage = async (messageData: any) => {
     if (!selectedChat) return
 
     try {
       console.log('Sending message:', messageData)
+      
+      // Stop typing indicator
+      setIsTyping(false)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
       
       const response = await fetch(`/api/direct-chats/${selectedChat.id}/messages`, {
         method: 'POST',
@@ -150,6 +186,11 @@ export default function DirectMessagesPage() {
         
         // Immediately update messages list
         setMessages(prev => [...prev, newMessage])
+        
+        // Scroll to bottom after sending
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
         
         // Update chat list
         setDirectChats(prev => 
@@ -369,7 +410,7 @@ export default function DirectMessagesPage() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto px-4 py-4">
               {messages.length > 0 ? (
                 <div className="space-y-1">
                   {messages.map((message) => (
@@ -380,6 +421,8 @@ export default function DirectMessagesPage() {
                       onRespondToEvent={handleRespondToEvent}
                     />
                   ))}
+                  {/* Scroll anchor */}
+                  <div ref={messagesEndRef} />
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
@@ -390,12 +433,25 @@ export default function DirectMessagesPage() {
                   </div>
                 </div>
               )}
+              
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                  <span>You are typing...</span>
+                </div>
+              )}
             </div>
 
             {/* Message Composer */}
             <MessageComposer
               onSendMessage={handleSendMessage}
               directChatId={selectedChat.id}
+              onInputChange={handleTyping}
             />
           </>
         ) : (

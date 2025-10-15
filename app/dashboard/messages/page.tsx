@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -75,6 +75,9 @@ export default function MessagesPage() {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [isTyping, setIsTyping] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Fetch channels
   useEffect(() => {
@@ -126,10 +129,41 @@ export default function MessagesPage() {
     }
   }, [selectedChannel])
 
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  // Handle typing indicator
+  const handleTyping = (value: string) => {
+    if (value.trim().length > 0) {
+      setIsTyping(true)
+      
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsTyping(false)
+      }, 2000)
+    } else {
+      setIsTyping(false)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+    }
+  }
+
   const handleSendMessage = async (messageData: any) => {
     if (!selectedChannel) return
 
     try {
+      // Stop typing indicator
+      setIsTyping(false)
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+
       const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,6 +177,11 @@ export default function MessagesPage() {
         const newMessage = await response.json()
         console.log('Message sent successfully:', newMessage)
         setMessages(prev => [...prev, newMessage])
+        
+        // Scroll to bottom after sending
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 100)
       } else {
         const errorData = await response.json()
         console.error('Error sending message:', errorData)
@@ -269,10 +308,11 @@ export default function MessagesPage() {
 
         {/* Message Input */}
         {selectedChannel && (
-          <MessageComposer 
-            onSendMessage={handleSendMessage} 
-            channelId={selectedChannel.id} 
-          />
+            <MessageComposer
+              onSendMessage={handleSendMessage}
+              channelId={selectedChannel.id}
+              onInputChange={handleTyping}
+            />
         )}
       </div>
     </div>

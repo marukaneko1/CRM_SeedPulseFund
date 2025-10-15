@@ -353,7 +353,10 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
         <div className="flex-1">
           <Input
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value)
+              onInputChange?.(e.target.value)
+            }}
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             disabled={isRecording || isUploading}
