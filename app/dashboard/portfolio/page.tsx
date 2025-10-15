@@ -179,7 +179,13 @@ export default function PortfolioPage() {
                       <p className="text-sm text-gray-600 mb-1">Growth Rate</p>
                       <p className="font-semibold text-blue-600">+{company.growth}%</p>
                     </div>
-      </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Portfolio Form Modal */}
       {showPortfolioForm && (
@@ -192,12 +198,6 @@ export default function PortfolioPage() {
           onSuccess={handlePortfolioSuccess}
         />
       )}
-    </div>
-  )
-})}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
