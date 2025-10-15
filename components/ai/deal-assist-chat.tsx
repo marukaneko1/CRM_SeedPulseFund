@@ -14,26 +14,20 @@ import {
   Brain,
   Loader2
 } from 'lucide-react'
-import { useChat } from 'ai'
 
 interface Message {
   id: string
-  role: 'user' | 'assistant' | 'system'
+  role: 'user' | 'assistant'
   content: string
-  createdAt?: Date
 }
 
 export function DealAssistChat() {
   const { data: session } = useSession()
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/ai/deal-assist',
-    initialMessages: [
-      {
-        id: 'welcome',
-        role: 'assistant',
-        content: `Hello! I'm your AI Deal Assistant, specialized in venture capital, investment analysis, and financial due diligence.
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: `Hello! I'm your AI Deal Assistant, specialized in venture capital, investment analysis, and financial due diligence.
 
 I can help you with:
 • **Deal Analysis** - Evaluate investment opportunities
@@ -44,14 +38,82 @@ I can help you with:
 • **Portfolio Strategy** - Investment thesis and portfolio construction
 
 What would you like assistance with today?`
-      }
-    ]
-  })
+    }
+  ])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/ai/deal-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, userMessage]
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to get AI response')
+      }
+
+      // Read the stream
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let assistantMessage = ''
+
+      const assistantId = (Date.now() + 1).toString()
+      setMessages(prev => [...prev, { id: assistantId, role: 'assistant', content: '' }])
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          assistantMessage += chunk
+
+          // Update the assistant message in real-time
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === assistantId 
+                ? { ...msg, content: assistantMessage }
+                : msg
+            )
+          )
+        }
+      }
+    } catch (error: any) {
+      console.error('AI Error:', error)
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `Sorry, I encountered an error: ${error.message}\n\nPlease make sure your OpenAI API key is configured in Vercel environment variables.`
+      }])
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const suggestedPrompts = [
     {
@@ -86,7 +148,7 @@ What would you like assistance with today?`
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900">AI Deal Assistant</h2>
-            <p className="text-sm text-gray-600">Powered by advanced AI • Specialized in VC & Finance</p>
+            <p className="text-sm text-gray-600">Powered by GPT-4 Turbo • Specialized in VC & Finance</p>
           </div>
         </div>
       </div>
@@ -114,7 +176,7 @@ What would you like assistance with today?`
               <div className="text-sm whitespace-pre-wrap leading-relaxed">
                 {message.content}
               </div>
-              {message.role === 'assistant' && (
+              {message.role === 'assistant' && message.content && (
                 <div className="text-xs text-gray-400 mt-2">
                   {new Date().toLocaleTimeString()}
                 </div>
@@ -134,19 +196,11 @@ What would you like assistance with today?`
           </div>
         )}
 
-        {error && (
-          <div className="flex justify-center">
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
-              Error: {error.message}
-            </div>
-          </div>
-        )}
-
         <div ref={messagesEndRef} />
       </div>
 
       {/* Suggested Prompts */}
-      {messages.length <= 1 && (
+      {messages.length <= 1 && !isLoading && (
         <div className="px-4 pb-4">
           <p className="text-sm font-medium text-gray-700 mb-3">Try asking about:</p>
           <div className="grid grid-cols-2 gap-2">
@@ -155,9 +209,7 @@ What would you like assistance with today?`
               return (
                 <button
                   key={index}
-                  onClick={() => {
-                    handleInputChange({ target: { value: prompt.prompt } } as any)
-                  }}
+                  onClick={() => setInput(prompt.prompt)}
                   className="flex items-start gap-2 p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group"
                 >
                   <Icon className="w-5 h-5 text-gray-400 group-hover:text-blue-600 flex-shrink-0 mt-0.5" />
@@ -178,7 +230,7 @@ What would you like assistance with today?`
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
-            onChange={handleInputChange}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about deals, valuations, market trends..."
             className="flex-1"
             disabled={isLoading}
@@ -196,10 +248,9 @@ What would you like assistance with today?`
           </Button>
         </form>
         <p className="text-xs text-gray-500 mt-2 text-center">
-          AI responses are AI-generated and should be verified. For investment decisions, consult with professionals.
+          AI responses are generated and should be verified. For investment decisions, consult with professionals.
         </p>
       </div>
     </div>
   )
 }
-
