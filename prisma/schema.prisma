@@ -36,6 +36,7 @@ model User {
   notifications Notification[]
   reminders     Reminder[]
   files         File[]
+  aiChats       AIChat[]
   
   @@map("users")
 }
@@ -420,5 +421,28 @@ model File {
   updatedAt   DateTime  @updatedAt
   
   @@map("files")
+}
+
+model AIChat {
+  id        String    @id @default(cuid())
+  title     String    @default("New Chat")
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  messages  AIMessage[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@map("ai_chats")
+}
+
+model AIMessage {
+  id        String    @id @default(cuid())
+  role      String    // user, assistant, system
+  content   String    @db.Text
+  chatId    String
+  chat      AIChat    @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  
+  @@map("ai_messages")
 }
 
