@@ -163,14 +163,19 @@ export default function CalendarPage() {
     return date.toISOString().split('T')[0] === selectedDate
   }
   
-  const hasEvents = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
-    const combined = getCombinedEvents()
-    return combined.some(e => e.startTime.split('T')[0] === dateStr)
-  }
-  
   const isCurrentMonth = (date: Date) => {
     return date.getMonth() === currentMonth.getMonth()
+  }
+  
+  const hasEvents = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0]
+    // Check both own events and team events
+    const hasOwnEvents = events.some(e => e.startTime.split('T')[0] === dateStr)
+    const hasTeamEvents = selectedUsers.length > 0 && teamEvents.some(userCal => 
+      selectedUsers.includes(userCal.userId) && 
+      userCal.events.some(e => e.startTime.split('T')[0] === dateStr)
+    )
+    return hasOwnEvents || hasTeamEvents
   }
 
   // Fetch calendar events from API
