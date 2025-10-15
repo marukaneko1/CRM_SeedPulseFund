@@ -3,64 +3,98 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { Bell, CheckCheck, Trash2, Mail, Calendar, Users, Briefcase } from "lucide-react"
+import { Bell, CheckCheck, Trash2, Mail, Calendar, Users, Briefcase, MessageSquare } from "lucide-react"
 
-// Demo notifications only for admin user
-const demoNotifications = [
-  {
-    id: 1,
-    type: "email",
-    icon: Mail,
-    title: "New email from John Smith",
-    message: "Regarding the Series A funding discussion",
-    time: "5 minutes ago",
-    read: false,
-    priority: "high"
-  },
-  {
-    id: 2,
-    type: "meeting",
-    icon: Calendar,
-    title: "Meeting reminder",
-    message: "Pitch meeting with Acme Corp in 30 minutes",
-    time: "25 minutes ago",
-    read: false,
-    priority: "urgent"
-  },
-  {
-    id: 3,
-    type: "deal",
-    icon: Briefcase,
-    title: "Deal stage updated",
-    message: "TechStart moved to 'Negotiation' stage",
-    time: "1 hour ago",
-    read: false,
-    priority: "medium"
-  },
-]
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  priority: string
+  read: boolean
+  linkUrl?: string
+  createdAt: string
+  readAt?: string
+}
+
+const typeIcons: Record<string, any> = {
+  EMAIL: Mail,
+  MEETING: Calendar,
+  DEAL: Briefcase,
+  MESSAGE: MessageSquare,
+  TASK: CheckCheck,
+  REMINDER: Bell
+}
 
 export default function NotificationsPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
-  // Only show demo notifications for admin, empty for new users
-  const [notificationList, setNotificationList] = useState(isAdmin ? demoNotifications : [])
+  const [notificationList, setNotificationList] = useState<Notification[]>([])
   const [filter, setFilter] = useState<"all" | "unread">("all")
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchNotifications()
+    // Poll for new notifications every 10 seconds
+    const interval = setInterval(fetchNotifications, 10000)
+    return () => clearInterval(interval)
+  }, [session])
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications')
+      if (response.ok) {
+        const data = await response.json()
+        setNotificationList(data)
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const unreadCount = notificationList.filter(n => !n.read).length
 
-  const markAsRead = (id: number) => {
-    setNotificationList(prev =>
-      prev.map(n => n.id === id ? { ...n, read: true } : n)
-    )
+  const markAsRead = async (id: string) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id, read: true })
+      })
+
+      if (response.ok) {
+        setNotificationList(prev =>
+          prev.map(n => n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n)
+        )
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
   }
 
-  const markAllAsRead = () => {
-    setNotificationList(prev => prev.map(n => ({ ...n, read: true })))
+  const markAllAsRead = async () => {
+    const unreadIds = notificationList.filter(n => !n.read).map(n => n.id)
+    
+    for (const id of unreadIds) {
+      await markAsRead(id)
+    }
   }
 
-  const deleteNotification = (id: number) => {
-    setNotificationList(prev => prev.filter(n => n.id !== id))
+  const deleteNotification = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this notification?')) return
+
+    try {
+      const response = await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setNotificationList(prev => prev.filter(n => n.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error)
+    }
   }
 
   const filteredNotifications = filter === "unread" 
@@ -68,12 +102,23 @@ export default function NotificationsPage() {
     : notificationList
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "bg-red-100 text-red-800 border-red-300"
-      case "high": return "bg-orange-100 text-orange-800 border-orange-300"
-      case "medium": return "bg-blue-100 text-blue-800 border-blue-300"
+    switch (priority.toUpperCase()) {
+      case "URGENT": return "bg-red-100 text-red-800 border-red-300"
+      case "HIGH": return "bg-orange-100 text-orange-800 border-orange-300"
+      case "MEDIUM": return "bg-blue-100 text-blue-800 border-blue-300"
       default: return "bg-gray-100 text-gray-800 border-gray-300"
     }
+  }
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (seconds < 60) return `${seconds} seconds ago`
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`
+    return `${Math.floor(seconds / 86400)} days ago`
   }
 
   return (
@@ -151,7 +196,7 @@ export default function NotificationsPage() {
                             </span>
                           </div>
                           <p className="text-gray-600 text-sm mb-2">{notification.message}</p>
-                          <p className="text-xs text-gray-400">{notification.time}</p>
+                          <p className="text-xs text-gray-400">{getTimeAgo(notification.createdAt)}</p>
                         </div>
                         
                         <div className="flex gap-2 ml-4">
