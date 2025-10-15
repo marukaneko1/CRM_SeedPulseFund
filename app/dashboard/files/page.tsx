@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -74,12 +74,94 @@ const folders = [
 
 export default function FilesPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
+  const [files, setFiles] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null)
-  
-  const files = isAdmin ? demoFiles : []
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetchFiles()
+  }, [session, selectedFolder])
+
+  const fetchFiles = async () => {
+    try {
+      const url = selectedFolder 
+        ? `/api/files?folder=${encodeURIComponent(selectedFolder)}`
+        : '/api/files'
+      
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        setFiles(data)
+      }
+    } catch (error) {
+      console.error('Error fetching files:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) return
+
+    setUploading(true)
+    try {
+      for (const file of Array.from(selectedFiles)) {
+        // First upload the file
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json()
+
+          // Then save file metadata to database
+          await fetch('/api/files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: file.name,
+              originalName: file.name,
+              fileType: uploadData.fileType,
+              fileSize: file.size,
+              fileUrl: uploadData.fileUrl,
+              folder: selectedFolder || 'General'
+            })
+          })
+        }
+      }
+
+      fetchFiles()
+    } catch (error) {
+      console.error('Error uploading files:', error)
+      alert('Failed to upload files')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleDeleteFile = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this file?')) return
+
+    try {
+      const response = await fetch(`/api/files/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        fetchFiles()
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error)
+    }
+  }
   
   const filteredFiles = files.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -99,10 +181,17 @@ export default function FilesPage() {
             <Folder className="w-4 h-4 mr-2" />
             New Folder
           </Button>
-          <Button>
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             <Upload className="w-4 h-4 mr-2" />
-            Upload File
+            {uploading ? 'Uploading...' : 'Upload File'}
           </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileUpload}
+            className="hidden"
+          />
         </div>
       </div>
 
@@ -194,7 +283,7 @@ export default function FilesPage() {
                       <Button size="sm" variant="ghost">
                         <Share2 className="w-3 h-3" />
                       </Button>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteFile(file.id)}>
                         <Trash2 className="w-3 h-3 text-red-600" />
                       </Button>
                     </div>
@@ -210,7 +299,7 @@ export default function FilesPage() {
                 <p className="text-gray-600 mb-4">
                   Upload your first file to get started
                 </p>
-                <Button>
+                <Button onClick={() => fileInputRef.current?.click()}>
                   <Upload className="w-4 h-4 mr-2" />
                   Upload File
                 </Button>
