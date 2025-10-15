@@ -43,6 +43,7 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   // Poll form state
   const [pollData, setPollData] = useState({
