@@ -1,9 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export function UpdateBanner() {
-  const [lastUpdate] = useState(new Date())
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Only set date on client side to avoid hydration mismatch
+  useEffect(() => {
+    setLastUpdate(new Date())
+    setMounted(true)
+  }, [])
 
   const formatDateTime = (date: Date) => {
     return date.toLocaleDateString('en-US', {
@@ -12,6 +19,11 @@ export function UpdateBanner() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  // Don't render until client-side to avoid hydration issues
+  if (!mounted || !lastUpdate) {
+    return null
   }
 
   return (

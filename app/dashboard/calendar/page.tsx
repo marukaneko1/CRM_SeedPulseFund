@@ -20,7 +20,12 @@ export default function CalendarPage() {
   const { data: session } = useSession()
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedDate, setSelectedDate] = useState("")
+
+  // Set date on client side only to avoid hydration mismatch
+  useEffect(() => {
+    setSelectedDate(new Date().toISOString().split('T')[0])
+  }, [])
 
   // Fetch calendar events from API
   useEffect(() => {
