@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { Plus, Edit2, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/utils"
+import { DealForm } from "@/components/forms/deal-form"
 
 const stages = [
   { id: "LEAD", name: "Lead", color: "bg-gray-200" },
@@ -39,27 +40,52 @@ export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | undefined>()
 
   // Fetch deals from API
-  useEffect(() => {
-    async function fetchDeals() {
-      try {
-        const response = await fetch('/api/deals')
-        if (response.ok) {
-          const data = await response.json()
-          setDeals(data)
-        }
-      } catch (error) {
-        console.error('Error fetching deals:', error)
-      } finally {
-        setLoading(false)
+  const fetchDeals = async () => {
+    try {
+      const response = await fetch('/api/deals')
+      if (response.ok) {
+        const data = await response.json()
+        setDeals(data)
       }
+    } catch (error) {
+      console.error('Error fetching deals:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     if (session) {
       fetchDeals()
     }
   }, [session])
+
+  const handleAddDeal = () => {
+    setSelectedDeal(undefined)
+    setShowForm(true)
+  }
+
+  const handleEditDeal = (deal: Deal) => {
+    setSelectedDeal(deal)
+    setShowForm(true)
+  }
+
+  const handleDeleteDeal = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this deal?')) return
+    
+    try {
+      const response = await fetch(`/api/deals/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        fetchDeals()
+      }
+    } catch (error) {
+      console.error('Error deleting deal:', error)
+    }
+  }
 
   const getDealsByStage = (stageId: string) => {
     return deals.filter(deal => deal.stage === stageId)
@@ -72,7 +98,7 @@ export default function DealsPage() {
           <h1 className="text-3xl font-bold mb-2">Deal Pipeline</h1>
           <p className="text-gray-600">Track your deals through each stage</p>
         </div>
-        <Button>
+        <Button onClick={handleAddDeal}>
           <Plus className="w-4 h-4 mr-2" />
           New Deal
         </Button>
@@ -95,15 +121,28 @@ export default function DealsPage() {
                 </div>
                 <div className="bg-gray-50 p-4 rounded-b-lg min-h-[500px] space-y-3">
                   {stageDeals.map((deal) => (
-                    <Card key={deal.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <Card key={deal.id} className="hover:shadow-md transition-shadow">
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base">{deal.title}</CardTitle>
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-base">{deal.title}</CardTitle>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditDeal(deal); }}>
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteDeal(deal.id); }}>
+                              <Trash2 className="w-3 h-3 text-red-600" />
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-gray-600 mb-2">{deal.company}</p>
-                        <p className="text-lg font-semibold text-blue-600">
-                          {formatCurrency(deal.amount)}
-                        </p>
+                        <p className="text-sm text-gray-600 mb-2">{deal.company?.name || 'No company'}</p>
+                        {deal.amount && (
+                          <p className="text-lg font-semibold text-blue-600 mb-1">
+                            {formatCurrency(deal.amount)}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500">{deal.probability}% win probability</p>
                       </CardContent>
                     </Card>
                   ))}
@@ -122,7 +161,7 @@ export default function DealsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {formatCurrency(deals.reduce((sum, deal) => sum + deal.amount, 0))}
+              {formatCurrency(deals.reduce((sum, deal) => sum + (deal.amount || 0), 0))}
             </p>
           </CardContent>
         </Card>
@@ -140,7 +179,7 @@ export default function DealsPage() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {formatCurrency(deals.reduce((sum, deal) => sum + deal.amount, 0) / deals.length)}
+              {deals.length > 0 ? formatCurrency(deals.reduce((sum, deal) => sum + (deal.amount || 0), 0) / deals.length) : '$0'}
             </p>
           </CardContent>
         </Card>
@@ -153,6 +192,15 @@ export default function DealsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Deal Form Modal */}
+      {showForm && (
+        <DealForm
+          deal={selectedDeal}
+          onClose={() => setShowForm(false)}
+          onSuccess={() => fetchDeals()}
+        />
+      )}
     </div>
   )
 }

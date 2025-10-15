@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Building, Search, Plus, TrendingUp, MapPin, Users, DollarSign } from "lucide-react"
+import { Building, Search, Plus, TrendingUp, MapPin, Users, DollarSign, Edit2, Trash2 } from "lucide-react"
+import { CompanyForm } from "@/components/forms/company-form"
 
 interface Company {
   id: string
@@ -85,27 +86,52 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStage, setFilterStage] = useState("all")
+  const [showForm, setShowForm] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState<Company | undefined>()
 
   // Fetch companies from API
-  useEffect(() => {
-    async function fetchCompanies() {
-      try {
-        const response = await fetch('/api/companies')
-        if (response.ok) {
-          const data = await response.json()
-          setCompanies(data)
-        }
-      } catch (error) {
-        console.error('Error fetching companies:', error)
-      } finally {
-        setLoading(false)
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch('/api/companies')
+      if (response.ok) {
+        const data = await response.json()
+        setCompanies(data)
       }
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     if (session) {
       fetchCompanies()
     }
   }, [session])
+
+  const handleAddCompany = () => {
+    setSelectedCompany(undefined)
+    setShowForm(true)
+  }
+
+  const handleEditCompany = (company: Company) => {
+    setSelectedCompany(company)
+    setShowForm(true)
+  }
+
+  const handleDeleteCompany = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this company? This will also remove related contacts and deals.')) return
+    
+    try {
+      const response = await fetch(`/api/companies/${id}`, { method: 'DELETE' })
+      if (response.ok) {
+        fetchCompanies()
+      }
+    } catch (error) {
+      console.error('Error deleting company:', error)
+    }
+  }
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,7 +152,7 @@ export default function CompaniesPage() {
             </h1>
             <p className="text-gray-600 mt-1">{companies.length} companies in your network</p>
           </div>
-          <Button>
+          <Button onClick={handleAddCompany}>
             <Plus className="w-4 h-4 mr-2" />
             Add Company
           </Button>
@@ -168,51 +194,74 @@ export default function CompaniesPage() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-                    {company.logo}
+                    {company.name.charAt(0)}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{company.name}</h3>
                     <p className="text-sm text-gray-500">{company.website}</p>
                   </div>
                 </div>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditCompany(company); }}>
+                    <Edit2 className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteCompany(company.id); }}>
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Building className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{company.industry}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{company.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{company.employees} employees</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <DollarSign className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">{company.funding} raised</span>
-                </div>
+                {company.industry && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Building className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{company.industry}</span>
+                  </div>
+                )}
+                {company.location && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{company.location}</span>
+                  </div>
+                )}
+                {company.teamSize && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">{company.teamSize} employees</span>
+                  </div>
+                )}
+                {company.foundedYear && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <TrendingUp className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Founded {company.foundedYear}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
+              {company.stage && (
+                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                   <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                     {company.stage}
                   </span>
-                  <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    {company.status}
-                  </span>
+                  {company._count && (
+                    <div className="text-xs text-gray-500">
+                      {company._count.contacts} contacts • {company._count.deals} deals
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500">Last contact: {company.lastContact}</p>
-              </div>
+              )}
             </div>
           ))}
         </div>
+
+        {/* Company Form Modal */}
+        {showForm && (
+          <CompanyForm
+            company={selectedCompany}
+            onClose={() => setShowForm(false)}
+            onSuccess={() => fetchCompanies()}
+          />
+        )}
       </div>
     </div>
   )
