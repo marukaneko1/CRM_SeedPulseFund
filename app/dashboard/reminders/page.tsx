@@ -249,6 +249,11 @@ export default function RemindersPage() {
               </div>
             </div>
           ))}
+          ) : (
+            <div className="text-center text-gray-500 py-12">
+              <p>No reminders yet. Add one to get started!</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
