@@ -433,85 +433,74 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
           </Button>
 
           {showAttachmentMenu && (
-            <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 grid grid-cols-2 gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  fileInputRef.current?.click()
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <FileText className="w-4 h-4 mb-1" />
-                <span className="text-xs">File</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  fileInputRef.current?.click()
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <Image className="w-4 h-4 mb-1" />
-                <span className="text-xs">Photo</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  fileInputRef.current?.click()
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <Video className="w-4 h-4 mb-1" />
-                <span className="text-xs">Video</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowPollForm(true)
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <BarChart3 className="w-4 h-4 mb-1" />
-                <span className="text-xs">Poll</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowEventForm(true)
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <Calendar className="w-4 h-4 mb-1" />
-                <span className="text-xs">Event</span>
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  // AI Image generation - placeholder
-                  alert('AI Image generation coming soon!')
-                  setShowAttachmentMenu(false)
-                }}
-                className="flex flex-col items-center p-2 h-auto"
-              >
-                <Sparkles className="w-4 h-4 mb-1" />
-                <span className="text-xs">AI Image</span>
-              </Button>
+            <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-xl p-4">
+              <div className="flex gap-4 justify-evenly items-center">
+                <button
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <FileText className="w-7 h-7 mb-2 text-blue-600" />
+                  <span className="text-xs font-medium text-gray-700">File</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    imageInputRef.current?.click()
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-green-50 rounded-lg transition-colors"
+                >
+                  <Image className="w-7 h-7 mb-2 text-green-600" />
+                  <span className="text-xs font-medium text-gray-700">Photo</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    imageInputRef.current?.click()
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-purple-50 rounded-lg transition-colors"
+                >
+                  <Video className="w-7 h-7 mb-2 text-purple-600" />
+                  <span className="text-xs font-medium text-gray-700">Video</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowPollForm(true)
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-orange-50 rounded-lg transition-colors"
+                >
+                  <BarChart3 className="w-7 h-7 mb-2 text-orange-600" />
+                  <span className="text-xs font-medium text-gray-700">Poll</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowEventForm(true)
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Calendar className="w-7 h-7 mb-2 text-red-600" />
+                  <span className="text-xs font-medium text-gray-700">Event</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    alert('AI Image generation coming soon!')
+                    setShowAttachmentMenu(false)
+                  }}
+                  className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-indigo-50 rounded-lg transition-colors"
+                >
+                  <Sparkles className="w-7 h-7 mb-2 text-indigo-600" />
+                  <span className="text-xs font-medium text-gray-700">AI</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -544,12 +533,20 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
         </Button>
       </div>
 
-      {/* Hidden file input */}
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+        accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+      <input
+        ref={imageInputRef}
+        type="file"
+        multiple
+        accept="image/*,video/*"
         onChange={handleFileUpload}
         className="hidden"
       />
