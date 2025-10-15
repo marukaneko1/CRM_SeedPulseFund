@@ -168,7 +168,7 @@ export default function NotificationsPage() {
             </div>
           ) : (
             filteredNotifications.map((notification) => {
-              const Icon = notification.icon
+              const Icon = typeIcons[notification.type] || Bell
               return (
                 <div
                   key={notification.id}
