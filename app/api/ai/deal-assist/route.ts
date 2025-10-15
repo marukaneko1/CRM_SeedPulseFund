@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
     const { messages } = await req.json()
 
-    const result = await streamText({
+    const result = streamText({
       model: openai('gpt-4-turbo'),
       system: `You are an expert AI Deal Assistant for a venture capital firm. You specialize in:
 
@@ -61,7 +61,6 @@ export async function POST(req: Request) {
 **Important:** Always remind users that AI analysis should be verified and professional advice should be sought for final investment decisions.`,
       messages: convertToCoreMessages(messages),
       temperature: 0.7,
-      maxTokens: 2000,
     })
 
     return result.toDataStreamResponse()
