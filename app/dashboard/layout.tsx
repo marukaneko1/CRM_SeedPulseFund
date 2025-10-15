@@ -28,6 +28,14 @@ import {
   ChevronDown,
   LogOut,
   User,
+  FolderOpen,
+  FileSignature,
+  Calculator,
+  Scale,
+  Network,
+  ClipboardCheck,
+  Fundraising,
+  PieChart,
 } from "lucide-react"
 
 // Helper to get dynamic badge counts based on user
@@ -44,6 +52,27 @@ const getDynamicNavigation = (isAdmin: boolean) => [
   { name: "Tasks", href: "/dashboard/tasks", icon: Target },
   { name: "Watching", href: "/dashboard/watching", icon: Eye, badge: isAdmin ? "5" : undefined },
   { name: "Screeners", href: "/dashboard/screeners", icon: Eye },
+  
+  // New sections
+  { type: "separator" },
+  { type: "section", name: "DATA & DOCUMENTS" },
+  { name: "Data Rooms", href: "/dashboard/data-rooms", icon: FolderOpen },
+  { name: "Digital Signing", href: "/dashboard/digital-signing", icon: FileSignature },
+  
+  { type: "separator" },
+  { type: "section", name: "OPERATIONS" },
+  { name: "Accounting", href: "/dashboard/accounting", icon: Calculator },
+  { name: "Legal", href: "/dashboard/legal", icon: Scale },
+  { name: "Networking", href: "/dashboard/networking", icon: Network },
+  { name: "Surveys", href: "/dashboard/surveys", icon: ClipboardCheck },
+  
+  { type: "separator" },
+  { type: "section", name: "INVESTOR RELATIONS" },
+  { name: "Fundraising", href: "/dashboard/fundraising", icon: Fundraising },
+  { name: "LP Portal", href: "/dashboard/lp-portal", icon: PieChart },
+  { name: "Reporting", href: "/dashboard/reporting", icon: BarChart3 },
+  
+  { type: "separator" },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   
   // Separator

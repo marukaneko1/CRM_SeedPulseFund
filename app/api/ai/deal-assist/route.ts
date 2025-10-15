@@ -13,7 +13,19 @@ export async function POST(req: Request) {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const { messages } = await req.json()
+    const body = await req.json()
+    
+    // Guard against undefined messages
+    const messages = Array.isArray(body?.messages) ? body.messages : []
+    
+    if (messages.length === 0) {
+      return new Response(JSON.stringify({ 
+        error: 'No messages provided. Please send a message to get assistance.' 
+      }), { 
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
 
     const result = streamText({
       model: openai('gpt-4-turbo'),
