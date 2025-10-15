@@ -182,7 +182,8 @@ export default function CalendarPage() {
             setSelectedEvent(null)
           }}
           onSuccess={() => {
-            fetchEvents()
+            // Refresh events list
+            window.location.reload()
           }}
         />
       )}
