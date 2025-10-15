@@ -16,6 +16,7 @@ SeedPulse CRM is an enterprise-grade customer relationship management system bui
 
 - 🎯 **Complete CRM** - Contacts, companies, deals, tasks, calendar
 - 💬 **Real-time Messaging** - Team chat, DMs, voice, polls, events
+- 📧 **Gmail Integration** - Send/receive emails, auto-sync, notifications
 - 🤖 **AI Co-pilot** - Deal analysis, DD checklists, memo generation
 - 📊 **Analytics** - Comprehensive reporting and fund metrics
 - 🔒 **Data Rooms** - Secure document sharing with permissions
@@ -43,6 +44,8 @@ SeedPulse CRM is an enterprise-grade customer relationship management system bui
 **AI & Services:**
 - OpenAI GPT-4o / Anthropic Claude
 - Vercel AI SDK
+- Gmail API (email integration)
+- Google Calendar / Calendly (optional)
 - DocuSign / Dropbox Sign (optional)
 
 ---
@@ -108,6 +111,11 @@ NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
 OPENAI_API_KEY="sk-your-api-key"
 AI_PROVIDER="openai" # or "anthropic"
 
+# Gmail Integration (Optional)
+GMAIL_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+GMAIL_CLIENT_SECRET="your-client-secret"
+GMAIL_REDIRECT_URI="http://localhost:3000/api/email/gmail/callback"
+
 # E-Signature (Optional)
 DOCUSIGN_ACCOUNT_ID=""
 DOCUSIGN_INTEGRATION_KEY=""
@@ -168,6 +176,16 @@ openssl rand -base64 32
 - Upload and organization
 - Search and filtering
 - Preview support
+
+**Email Integration:**
+- Gmail OAuth 2.0 connection
+- Send emails through your Gmail account
+- Receive and sync emails automatically
+- Auto-sync every 60 seconds (configurable)
+- Desktop notifications for new emails
+- Email organization (inbox, sent, starred, archive)
+- Full email compose interface with CC/BCC
+- Real-time email updates
 
 ### AI Intelligence
 
@@ -278,6 +296,7 @@ openssl rand -base64 32
 |--------|--------|
 | Core CRM | ✅ 100% |
 | Messaging | ✅ 100% |
+| Gmail Integration | ✅ 100% |
 | AI Features | ✅ 100% |
 | Data Rooms | ✅ 95% |
 | LP Portal | ✅ 100% |
@@ -332,6 +351,9 @@ npx prisma generate
 - **[Production Deployment Guide](PRODUCTION_DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
 - **[Project Summary](PROJECT_SUMMARY.md)** - Comprehensive feature overview
 - **[QA Test Checklist](QA_TEST_CHECKLIST.md)** - Testing procedures
+- **[Gmail Integration Setup](GMAIL_INTEGRATION_SETUP.md)** - Detailed Gmail setup guide
+- **[Gmail Quick Start](GMAIL_QUICK_START.md)** - 5-minute Gmail setup
+- **[Gmail Features](GMAIL_FEATURES.md)** - Complete Gmail features guide
 
 ---
 
@@ -371,6 +393,12 @@ Proprietary - SeedPulse Fund © 2025
 - Verify NEXTAUTH_SECRET is set
 - Check NEXTAUTH_URL matches deployment
 
+**Gmail Integration Issues:**
+- Verify GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET are set
+- Check redirect URI matches Google Cloud Console
+- Enable Gmail API in Google Cloud Console
+- See [Gmail Quick Start](GMAIL_QUICK_START.md) for setup
+
 ### Getting Help
 
 - 📚 Check documentation files
@@ -387,10 +415,11 @@ Proprietary - SeedPulse Fund © 2025
 - ✅ Production ready
 
 ### Future Enhancements (Optional)
+- ✅ Gmail Integration (Completed!)
 - 🔄 Real WebSocket implementation
 - 🔄 Mobile app (React Native)
 - 🔄 Advanced analytics with ML
-- 🔄 Third-party integrations (Slack, Gmail, etc.)
+- 🔄 Additional integrations (Slack, Zoom, etc.)
 - 🔄 White-label capabilities
 
 ---

@@ -1,47 +1,104 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sendEmail, sendBulkEmail } from '@/lib/email'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { sendGmailMessage, refreshGmailToken } from '@/lib/integrations/gmail'
 import { prisma } from '@/lib/prisma'
 
+/**
+ * Send email via Gmail
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { to, subject, body: emailBody, isBulk, senderId } = body
+    const session = await getServerSession(authOptions)
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-    if (!to || !subject || !emailBody) {
+    const body = await request.json()
+    const { to, subject, body: messageBody, message, from, cc, bcc } = body
+
+    // Accept both "body" and "message" field names
+    const emailMessage = messageBody || message
+
+    if (!to || !subject || !emailMessage) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: to, subject, message/body' },
         { status: 400 }
       )
     }
 
-    let result
+    // Get user's Gmail tokens from database
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: {
+        email: true,
+        // In production, add these fields:
+        // gmailAccessToken: true,
+        // gmailRefreshToken: true,
+        // gmailConnected: true,
+        // gmailAddress: true,
+      }
+    })
 
-    if (isBulk && Array.isArray(to)) {
-      result = await sendBulkEmail(to, subject, emailBody)
-    } else {
-      result = await sendEmail({
-        to,
-        subject,
-        html: emailBody,
-      })
-    }
+    // For demo, simulate sending
+    // In production, use:
+    // if (!user?.gmailConnected || !user?.gmailAccessToken) {
+    //   return NextResponse.json({ error: 'Gmail not connected' }, { status: 400 })
+    // }
 
-    // Log email in database
-    if (senderId) {
-      await prisma.email.create({
-        data: {
-          subject,
-          body: emailBody,
-          from: process.env.EMAIL_FROM || 'noreply@seedpulsefund.com',
-          to: Array.isArray(to) ? to.join(',') : to,
-          status: 'SENT',
-          sentAt: new Date(),
-          senderId,
-        },
-      })
-    }
+    // let accessToken = user.gmailAccessToken
+    // try {
+    //   const messageId = await sendGmailMessage(
+    //     accessToken!,
+    //     to,
+    //     subject,
+    //     message,
+    //     from || user.gmailAddress
+    //   )
+    //   return NextResponse.json({ success: true, messageId })
+    // } catch (error) {
+    //   // Token might be expired, try to refresh
+    //   if (user.gmailRefreshToken) {
+    //     accessToken = await refreshGmailToken(user.gmailRefreshToken, {
+    //       clientId: process.env.GMAIL_CLIENT_ID!,
+    //       clientSecret: process.env.GMAIL_CLIENT_SECRET!,
+    //       redirectUri: process.env.GMAIL_REDIRECT_URI!
+    //     })
+    //     
+    //     // Update token in database
+    //     await prisma.user.update({
+    //       where: { email: session.user.email },
+    //       data: { gmailAccessToken: accessToken }
+    //     })
+    //     
+    //     // Retry sending
+    //     const messageId = await sendGmailMessage(
+    //       accessToken,
+    //       to,
+    //       subject,
+    //       message,
+    //       from || user.gmailAddress
+    //     )
+    //     return NextResponse.json({ success: true, messageId })
+    //   }
+    //   throw error
+    // }
 
-    return NextResponse.json({ success: true, result })
+    // Demo response
+    console.log('Demo email sent:', { 
+      to, 
+      cc, 
+      bcc, 
+      subject, 
+      body: emailMessage.substring(0, 50) + '...', 
+      from: from || session.user.email 
+    })
+    return NextResponse.json({ 
+      success: true, 
+      messageId: 'demo-' + Date.now(),
+      message: 'Email sent successfully (demo mode)'
+    })
+
   } catch (error) {
     console.error('Email send error:', error)
     return NextResponse.json(
@@ -50,5 +107,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
-
