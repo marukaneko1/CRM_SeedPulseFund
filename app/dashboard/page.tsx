@@ -89,48 +89,162 @@ export default function DashboardPage() {
   const [selectedDeals, setSelectedDeals] = useState<number[]>([])
   const [showSlimView, setShowSlimView] = useState(false)
   
-  const deals = isAdmin ? demoDeals : []
+  // Filter & Sort states
+  const [filterStatus, setFilterStatus] = useState<string[]>([])
+  const [filterDealTeam, setFilterDealTeam] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<'name' | 'status' | 'lastContact'>('lastContact')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  
+  // Column visibility
+  const [visibleColumns, setVisibleColumns] = useState({
+    name: true,
+    status: true,
+    people: true,
+    dealTeam: true,
+    connections: true,
+    firstEmail: true,
+    lastEmail: true,
+    lastMeeting: true,
+    lastContact: true,
+  })
+  
+  // Modals
+  const [showFilterModal, setShowFilterModal] = useState(false)
+  const [showCustomizeModal, setShowCustomizeModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  
+  const allDeals = isAdmin ? demoDeals : []
+  
+  // Filter and sort deals
+  const getFilteredAndSortedDeals = () => {
+    let filtered = [...allDeals]
+    
+    // Apply search
+    if (searchQuery) {
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        d.dealTeam.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    }
+    
+    // Apply status filter
+    if (filterStatus.length > 0) {
+      filtered = filtered.filter(d => filterStatus.includes(d.status))
+    }
+    
+    // Apply deal team filter
+    if (filterDealTeam.length > 0) {
+      filtered = filtered.filter(d => filterDealTeam.includes(d.dealTeam))
+    }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0
+      if (sortBy === 'name') {
+        comparison = a.name.localeCompare(b.name)
+      } else if (sortBy === 'status') {
+        comparison = a.status.localeCompare(b.status)
+      } else if (sortBy === 'lastContact') {
+        comparison = a.lastContact.localeCompare(b.lastContact)
+      }
+      return sortDirection === 'asc' ? comparison : -comparison
+    })
+    
+    return filtered
+  }
+  
+  // Get view-specific data
+  const getViewData = () => {
+    const baseDeals = getFilteredAndSortedDeals()
+    
+    switch (activeView) {
+      case 'all-pipeline':
+        return baseDeals
+      case 'saved-1':
+        return baseDeals.filter(d => d.status === 'Portfolio')
+      case 'team-activity':
+        return baseDeals.filter(d => d.lastContact && d.lastContact.includes('hours'))
+      case 'funnel':
+        return baseDeals
+      case 'list-summary':
+        return baseDeals
+      default:
+        return baseDeals
+    }
+  }
+  
+  const deals = getViewData()
+  
+  // Get unique values for filters
+  const uniqueStatuses = Array.from(new Set(allDeals.map(d => d.status)))
+  const uniqueDealTeams = Array.from(new Set(allDeals.map(d => d.dealTeam)))
   
   // Button handlers
   const handleShare = () => {
-    alert('Share functionality - Generate shareable link or invite collaborators')
+    setShowShareModal(true)
   }
   
   const handleListOptions = () => {
-    alert('List Options - Configure list settings and permissions')
+    router.push('/dashboard/settings?tab=list-options')
   }
   
   const handleFilter = () => {
-    alert('Filter - Apply filters to narrow down results')
+    setShowFilterModal(true)
   }
   
   const handleSort = () => {
-    alert('Sort - Change sorting criteria')
+    // Cycle through sort options
+    if (sortBy === 'lastContact') {
+      setSortBy('name')
+    } else if (sortBy === 'name') {
+      setSortBy('status')
+    } else {
+      setSortBy('lastContact')
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    }
   }
   
   const handleCustomize = () => {
-    alert('Customize - Customize columns and layout')
+    setShowCustomizeModal(true)
   }
   
   const handleDownload = () => {
-    // Export deals to CSV
-    const csv = deals.map(d => 
-      `${d.name},${d.status},${d.dealTeam},${d.connections}`
-    ).join('\n')
-    const blob = new Blob([`Name,Status,Deal Team,Connections\n${csv}`], { type: 'text/csv' })
+    const visibleCols = Object.keys(visibleColumns).filter(k => visibleColumns[k as keyof typeof visibleColumns])
+    const headers = visibleCols.map(col => col.charAt(0).toUpperCase() + col.slice(1)).join(',')
+    const rows = deals.map(d => {
+      const row: string[] = []
+      visibleCols.forEach(col => {
+        row.push((d as any)[col] || '')
+      })
+      return row.join(',')
+    }).join('\n')
+    
+    const csv = `${headers}\n${rows}`
+    const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'deals-export.csv'
+    a.download = `deals-${activeView}-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
   }
   
   const handleUpload = () => {
-    alert('Upload - Import deals from CSV or other sources')
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.csv'
+    input.onchange = (e: any) => {
+      const file = e.target.files[0]
+      alert(`Upload functionality: Import ${file.name} to add new deals`)
+    }
+    input.click()
   }
   
   const handleMaximize = () => {
-    alert('Maximize - Enter fullscreen mode')
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      document.documentElement.requestFullscreen()
+    }
   }
   
   const handleAddNew = () => {
@@ -159,6 +273,12 @@ export default function DashboardPage() {
         ? prev.filter(i => i !== index)
         : [...prev, index]
     )
+  }
+  
+  const clearFilters = () => {
+    setFilterStatus([])
+    setFilterDealTeam([])
+    setSearchQuery('')
   }
   
   return (
@@ -256,7 +376,24 @@ export default function DashboardPage() {
 
         {/* Summary */}
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">+ All Pipeline 104 organizations</p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-gray-600">
+              {activeView === 'all-pipeline' && `+ All Pipeline ${deals.length} organizations`}
+              {activeView === 'saved-1' && `Saved View 1: ${deals.length} portfolio companies`}
+              {activeView === 'team-activity' && `Team Activity: ${deals.length} recent interactions`}
+              {activeView === 'funnel' && `Funnel Analysis: ${deals.length} deals`}
+              {activeView === 'list-summary' && `List Summary: ${deals.length} total`}
+              {activeView === 'views' && `Views: ${deals.length} organizations`}
+            </p>
+            {(filterStatus.length > 0 || filterDealTeam.length > 0 || searchQuery) && (
+              <button 
+                onClick={clearFilters}
+                className="text-xs text-blue-600 hover:text-blue-700 underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Collaborators</span>
             <div className="flex items-center gap-2">
@@ -275,7 +412,7 @@ export default function DashboardPage() {
               </Button>
               <Button variant="outline" size="sm" onClick={handleSort}>
                 <ArrowUpDown className="w-4 h-4 mr-2" />
-                Sort: Time In Current Status 1x
+                Sort: {sortBy === 'name' ? 'Name' : sortBy === 'status' ? 'Status' : 'Last Contact'} {sortDirection === 'asc' ? '↑' : '↓'}
               </Button>
               <Button variant="outline" size="sm" onClick={handleCustomize}>
                 <MoreHorizontal className="w-4 h-4 mr-2" />
@@ -403,6 +540,135 @@ export default function DashboardPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowFilterModal(false)}>
+          <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4">Filter Deals</h2>
+            
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Status</h3>
+              {uniqueStatuses.map(status => (
+                <label key={status} className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={filterStatus.includes(status)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilterStatus([...filterStatus, status])
+                      } else {
+                        setFilterStatus(filterStatus.filter(s => s !== status))
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{status}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="mb-4">
+              <h3 className="font-semibold mb-2">Deal Team</h3>
+              {uniqueDealTeams.map(team => (
+                <label key={team} className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    checked={filterDealTeam.includes(team)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFilterDealTeam([...filterDealTeam, team])
+                      } else {
+                        setFilterDealTeam(filterDealTeam.filter(t => t !== team))
+                      }
+                    }}
+                    className="rounded"
+                  />
+                  <span className="text-sm">{team}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={() => setShowFilterModal(false)} className="flex-1">
+                Apply Filters
+              </Button>
+              <Button variant="outline" onClick={clearFilters}>
+                Clear All
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customize Modal */}
+      {showCustomizeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowCustomizeModal(false)}>
+          <div className="bg-white rounded-lg p-6 w-96" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4">Customize Columns</h2>
+            
+            {Object.keys(visibleColumns).map(col => (
+              <label key={col} className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={visibleColumns[col as keyof typeof visibleColumns]}
+                  onChange={(e) => {
+                    setVisibleColumns({
+                      ...visibleColumns,
+                      [col]: e.target.checked
+                    })
+                  }}
+                  className="rounded"
+                />
+                <span className="text-sm capitalize">{col.replace(/([A-Z])/g, ' $1').trim()}</span>
+              </label>
+            ))}
+
+            <div className="mt-4">
+              <Button onClick={() => setShowCustomizeModal(false)} className="w-full">
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowShareModal(false)}>
+          <div className="bg-white rounded-lg p-6 w-96" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-xl font-bold mb-4">Share View</h2>
+            <p className="text-sm text-gray-600 mb-4">Share this view with team members or generate a public link</p>
+            
+            <div className="mb-4">
+              <Input placeholder="Enter email address" className="mb-2" />
+              <Button variant="outline" size="sm" className="w-full">
+                <Share className="w-4 h-4 mr-2" />
+                Send Invitation
+              </Button>
+            </div>
+
+            <div className="border-t pt-4">
+              <p className="text-sm font-semibold mb-2">Public Link</p>
+              <div className="flex gap-2">
+                <Input value={`https://crm.app/view/${activeView}`} readOnly className="text-sm" />
+                <Button size="sm" onClick={() => {
+                  navigator.clipboard.writeText(`https://crm.app/view/${activeView}`)
+                  alert('Link copied to clipboard!')
+                }}>
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <Button variant="outline" onClick={() => setShowShareModal(false)} className="w-full">
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
