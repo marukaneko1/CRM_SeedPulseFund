@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, Clock, Video, Plus } from "lucide-react"
 
-const events = [
+// Demo events only for admin
+const demoEvents = [
   {
     id: "1",
     title: "Pitch Meeting - Startup X",
@@ -41,7 +43,12 @@ const events = [
 ]
 
 export default function CalendarPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
   const [selectedDate, setSelectedDate] = useState("2024-01-15")
+  
+  const events = isAdmin ? demoEvents : []
 
   return (
     <div className="p-8">

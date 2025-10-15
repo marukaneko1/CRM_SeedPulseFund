@@ -1,11 +1,13 @@
 "use client"
 
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TrendingUp, TrendingDown, DollarSign, Users, Plus } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 
-const portfolioCompanies = [
+// Demo portfolio companies only for admin
+const demoPortfolioCompanies = [
   {
     id: "1",
     name: "Startup X",
@@ -49,9 +51,14 @@ const portfolioCompanies = [
 ]
 
 export default function PortfolioPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  const portfolioCompanies = isAdmin ? demoPortfolioCompanies : []
+  
   const totalInvestment = portfolioCompanies.reduce((sum, company) => sum + company.investment, 0)
   const totalCurrentValue = portfolioCompanies.reduce((sum, company) => sum + company.currentValue, 0)
-  const totalReturn = ((totalCurrentValue - totalInvestment) / totalInvestment) * 100
+  const totalReturn = portfolioCompanies.length > 0 ? ((totalCurrentValue - totalInvestment) / totalInvestment) * 100 : 0
 
   return (
     <div className="p-8">
