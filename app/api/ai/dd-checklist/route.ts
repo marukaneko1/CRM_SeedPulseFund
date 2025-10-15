@@ -1,7 +1,7 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText } from 'ai'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getAIModel, handleAIError, isAIAvailable } from '@/lib/ai-provider'
 
 export const maxDuration = 30
 
@@ -10,6 +10,16 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return new Response('Unauthorized', { status: 401 })
+    }
+
+    if (!isAIAvailable()) {
+      return new Response(JSON.stringify({ 
+        error: 'AI service not configured.',
+        code: 'AI_NOT_CONFIGURED'
+      }), { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     const body = await req.json()
@@ -86,7 +96,7 @@ export async function POST(req: Request) {
 Please provide a detailed, actionable checklist that our team can use to conduct thorough due diligence.`
 
     const result = streamText({
-      model: openai('gpt-4-turbo'),
+      model: getAIModel('analysis'),
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.5, // Lower temperature for more consistent, structured output
@@ -95,20 +105,10 @@ Please provide a detailed, actionable checklist that our team can use to conduct
     return result.toTextStreamResponse()
   } catch (error: any) {
     console.error('AI DD Checklist Error:', error)
+    const errorResponse = handleAIError(error)
     
-    if (error?.message?.includes('API key')) {
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.' 
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-    
-    return new Response(JSON.stringify({ 
-      error: 'An error occurred while generating the checklist. Please try again.' 
-    }), { 
-      status: 500,
+    return new Response(JSON.stringify(errorResponse), { 
+      status: errorResponse.retryable ? 503 : 500,
       headers: { 'Content-Type': 'application/json' }
     })
   }

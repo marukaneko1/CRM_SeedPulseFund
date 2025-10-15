@@ -1,7 +1,7 @@
-import { openai } from '@ai-sdk/openai'
-import { streamText, convertToCoreMessages } from 'ai'
+import { streamText } from 'ai'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getAIModel, handleAIError, isAIAvailable } from '@/lib/ai-provider'
 
 export const maxDuration = 30
 
@@ -10,6 +10,16 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return new Response('Unauthorized', { status: 401 })
+    }
+
+    if (!isAIAvailable()) {
+      return new Response(JSON.stringify({ 
+        error: 'AI service not configured. Please add your API key.',
+        code: 'AI_NOT_CONFIGURED'
+      }), { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     const body = await req.json()
@@ -51,7 +61,7 @@ ${dealInfo ? `**Deal Information:** ${JSON.stringify(dealInfo, null, 2)}` : ''}
 Please provide a professional response to this objection that I can use in my investor communication.`
 
     const result = streamText({
-      model: openai('gpt-4-turbo'),
+      model: getAIModel('generation'),
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
       temperature: 0.7,
@@ -60,20 +70,10 @@ Please provide a professional response to this objection that I can use in my in
     return result.toTextStreamResponse()
   } catch (error: any) {
     console.error('AI Objection Reply Error:', error)
+    const errorResponse = handleAIError(error)
     
-    if (error?.message?.includes('API key')) {
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.' 
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
-    
-    return new Response(JSON.stringify({ 
-      error: 'An error occurred while generating the response. Please try again.' 
-    }), { 
-      status: 500,
+    return new Response(JSON.stringify(errorResponse), { 
+      status: errorResponse.retryable ? 503 : 500,
       headers: { 'Content-Type': 'application/json' }
     })
   }

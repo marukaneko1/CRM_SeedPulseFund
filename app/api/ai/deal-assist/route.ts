@@ -1,7 +1,7 @@
-import { openai } from '@ai-sdk/openai'
 import { streamText, convertToCoreMessages } from 'ai'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getAIModel, handleAIError, isAIAvailable } from '@/lib/ai-provider'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -11,6 +11,17 @@ export async function POST(req: Request) {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return new Response('Unauthorized', { status: 401 })
+    }
+
+    // Check if AI is available
+    if (!isAIAvailable()) {
+      return new Response(JSON.stringify({ 
+        error: 'AI service not configured. Please add your OpenAI or Anthropic API key in environment variables.',
+        code: 'AI_NOT_CONFIGURED'
+      }), { 
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      })
     }
 
     const body = await req.json()
@@ -28,7 +39,7 @@ export async function POST(req: Request) {
     }
 
     const result = streamText({
-      model: openai('gpt-4-turbo'),
+      model: getAIModel('analysis'),
       system: `You are an expert AI Deal Assistant for a venture capital firm. You specialize in:
 
 **Investment Analysis:**
@@ -79,20 +90,11 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('AI Deal Assist Error:', error)
     
-    // Return helpful error based on type
-    if (error?.message?.includes('API key')) {
-      return new Response(JSON.stringify({ 
-        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.' 
-      }), { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
+    // Use centralized error handling
+    const errorResponse = handleAIError(error)
     
-    return new Response(JSON.stringify({ 
-      error: 'An error occurred while processing your request. Please try again.' 
-    }), { 
-      status: 500,
+    return new Response(JSON.stringify(errorResponse), { 
+      status: errorResponse.retryable ? 503 : 500,
       headers: { 'Content-Type': 'application/json' }
     })
   }
