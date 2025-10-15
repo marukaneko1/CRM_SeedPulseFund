@@ -106,16 +106,7 @@ export default function RemindersPage() {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent": return "bg-red-500"
-      case "high": return "bg-orange-500"
-      case "medium": return "bg-blue-500"
-      default: return "bg-gray-500"
-    }
-  }
-
-  const filteredReminders = reminders.filter(r => {
+  const filteredReminders = reminders.filter((r: Reminder) => {
     if (filter === "active") return !r.completed
     if (filter === "completed") return r.completed
     return true
@@ -123,6 +114,10 @@ export default function RemindersPage() {
 
   const activeCount = reminders.filter(r => !r.completed).length
   const completedCount = reminders.filter(r => r.completed).length
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
+  }
 
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
@@ -221,23 +216,22 @@ export default function RemindersPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-3 h-3 rounded-full ${getPriorityColor(reminder.priority)}`}></div>
+                        <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                         <h3 className={`font-semibold text-gray-900 ${reminder.completed ? 'line-through' : ''}`}>
                           {reminder.title}
                         </h3>
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                          {reminder.category}
-                        </span>
+                        {reminder.description && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                            Reminder
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-600 text-sm mb-2">{reminder.description}</p>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {reminder.dueDate}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {reminder.dueTime}
+                          <CalendarIcon className="w-4 h-4" />
+                          <Clock className="w-4 h-4 ml-2" />
+                          {formatDateTime(reminder.reminderDate)}
                         </div>
                       </div>
                     </div>
