@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Fundraising, Plus, TrendingUp, Users, DollarSign } from "lucide-react"
+import { Plus, TrendingUp, Users, DollarSign } from "lucide-react"
 
 export default function FundraisingPage() {
   return (
@@ -12,7 +12,7 @@ export default function FundraisingPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Fundraising className="w-8 h-8 text-blue-600" />
+              <TrendingUp className="w-8 h-8 text-blue-600" />
               Fundraising
             </h1>
             <p className="text-gray-600 mt-1">Manage fund raising, LP pipeline, and commitments</p>
