@@ -30,14 +30,18 @@ import {
   User,
 } from "lucide-react"
 
-const navigation = [
+// Helper to get dynamic badge counts based on user
+const getDynamicNavigation = (isAdmin: boolean) => [
   // Main navigation
   { name: "Home", href: "/dashboard", icon: Home },
-  { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: "18" },
-  { name: "Reminders", href: "/dashboard/reminders", icon: Calendar },
-  { name: "Meetings", href: "/dashboard/calendar", icon: Calendar },
-  { name: "Unanswered Emails", href: "/dashboard/email", icon: Mail },
-  { name: "Watching", href: "/dashboard/watching", icon: Eye, badge: "11" },
+  { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: isAdmin ? "3" : undefined },
+  { name: "Reminders", href: "/dashboard/reminders", icon: Calendar, badge: isAdmin ? "2" : undefined },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, badge: isAdmin ? "4" : undefined },
+  { name: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: isAdmin ? "3" : undefined },
+  { name: "Email", href: "/dashboard/email", icon: Mail, badge: isAdmin ? "12" : undefined },
+  { name: "Files", href: "/dashboard/files", icon: FileText },
+  { name: "Tasks", href: "/dashboard/tasks", icon: Target },
+  { name: "Watching", href: "/dashboard/watching", icon: Eye, badge: isAdmin ? "5" : undefined },
   { name: "Screeners", href: "/dashboard/screeners", icon: Eye },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
   
@@ -89,9 +93,13 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
+  
+  // Get dynamic navigation with correct badge counts
+  const navigation = getDynamicNavigation(isAdmin)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -107,15 +115,16 @@ export default function DashboardLayout({
   }
 
   useEffect(() => {
-    // Check if user should see onboarding
-    const isNewUser = localStorage.getItem('new_user')
-    const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
-    
-    if (isNewUser && !hasSeenOnboarding && pathname === '/dashboard') {
-      localStorage.removeItem('new_user')
-      router.push('/dashboard/onboarding')
+    // Check if user should see onboarding - only for non-admin users
+    if (session && !isAdmin) {
+      const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
+      
+      // If they haven't seen onboarding and they're on the dashboard, redirect
+      if (!hasSeenOnboarding && pathname === '/dashboard') {
+        router.push('/dashboard/onboarding')
+      }
     }
-  }, [pathname, router])
+  }, [pathname, router, session, isAdmin])
 
   return (
     <div className="flex h-screen bg-gray-50">

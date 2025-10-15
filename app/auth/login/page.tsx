@@ -38,15 +38,19 @@ export default function LoginPage() {
       } else if (result?.ok) {
         console.log("Sign in successful, redirecting to dashboard")
         
-        // Check if this is a new user who should see onboarding
-        const isNewUser = localStorage.getItem('new_user')
-        const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
-        
-        if (isNewUser && !hasSeenOnboarding) {
-          localStorage.removeItem('new_user')
-          router.push("/dashboard/onboarding")
-        } else {
+        // Admin users skip onboarding
+        if (email === 'admin@demo.com') {
           router.push("/dashboard")
+        } else {
+          // Check if this is a new user who should see onboarding
+          const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
+          
+          if (!hasSeenOnboarding) {
+            // First time login - show onboarding
+            router.push("/dashboard/onboarding")
+          } else {
+            router.push("/dashboard")
+          }
         }
       } else {
         setError("Login failed. Please check your credentials.")
