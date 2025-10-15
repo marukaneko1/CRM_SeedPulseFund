@@ -42,9 +42,9 @@ export default function CalendarPage() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   
   // Calendar view mode
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list')
+  const [viewMode, setViewMode] = useState<'list' | 'month'>('month')
+  const [expandedView, setExpandedView] = useState<'day' | 'week' | 'month' | 'year'>('month')
   const [expandedCalendar, setExpandedCalendar] = useState(false)
-  const [quickAddTime, setQuickAddTime] = useState<{date: string, hour: number} | null>(null)
 
   // Set date on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -372,32 +372,72 @@ export default function CalendarPage() {
           <p className="text-gray-600">Manage your schedule and meetings</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex items-center gap-1 mr-2 border rounded-md p-1 bg-gray-50">
-            <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className="h-8"
-            >
-              <List className="w-4 h-4 mr-1" />
-              List
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              className="h-8"
-            >
-              <Grid className="w-4 h-4 mr-1" />
-              Grid
-            </Button>
-          </div>
+          {!expandedCalendar && (
+            <div className="flex items-center gap-1 mr-2 border rounded-md p-1 bg-gray-50">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="h-8"
+              >
+                <List className="w-4 h-4 mr-1" />
+                List
+              </Button>
+              <Button
+                variant={viewMode === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('month')}
+                className="h-8"
+              >
+                <Calendar className="w-4 h-4 mr-1" />
+                Month
+              </Button>
+            </div>
+          )}
+          
+          {expandedCalendar && (
+            <div className="flex items-center gap-1 mr-2 border rounded-md p-1 bg-gray-50">
+              <Button
+                variant={expandedView === 'day' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setExpandedView('day')}
+                className="h-8"
+              >
+                Day
+              </Button>
+              <Button
+                variant={expandedView === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setExpandedView('week')}
+                className="h-8"
+              >
+                Week
+              </Button>
+              <Button
+                variant={expandedView === 'month' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setExpandedView('month')}
+                className="h-8"
+              >
+                Month
+              </Button>
+              <Button
+                variant={expandedView === 'year' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setExpandedView('year')}
+                className="h-8"
+              >
+                Year
+              </Button>
+            </div>
+          )}
+          
           <Button 
-            variant="outline" 
+            variant={expandedCalendar ? "default" : "outline"}
             onClick={() => setExpandedCalendar(!expandedCalendar)}
           >
             <Maximize2 className="w-4 h-4 mr-2" />
-            {expandedCalendar ? 'Collapse' : 'Expand'}
+            {expandedCalendar ? 'Exit Fullscreen' : 'Fullscreen'}
           </Button>
           <Button variant="outline" onClick={syncAllCalendars} disabled={syncing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
@@ -411,29 +451,129 @@ export default function CalendarPage() {
       </div>
 
       {/* Expanded Full Calendar View */}
-      {viewMode === 'grid' && (
+      {expandedCalendar && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>
-              {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} - Week View
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button onClick={previousMonth} className="p-2 hover:bg-gray-100 rounded">
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <CardTitle>
+                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </CardTitle>
+                <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded">
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              <span className="text-sm text-gray-600">
+                {displayEvents.length} total events
+              </span>
+            </div>
           </CardHeader>
           <CardContent>
+            {/* MONTH VIEW */}
+            {expandedView === 'month' && (
+            <div>
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                  <div key={day} className="text-center text-sm font-bold text-gray-700 py-3 bg-gray-50 rounded">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Calendar days grid */}
+              <div className="grid grid-cols-7 gap-2">
+                {calendarDays.map((date, index) => {
+                  const dateStr = date.toISOString().split('T')[0]
+                  const dayEvents = displayEvents.filter(e => e.startTime.split('T')[0] === dateStr)
+                  
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedDate(dateStr)
+                        if (dayEvents.length === 0) {
+                          const title = prompt(`Add event for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:`)
+                          if (title) {
+                            handleQuickAddEvent(dateStr, 9) // Default 9 AM
+                          }
+                        }
+                      }}
+                      className={`
+                        min-h-[120px] p-2 border-2 rounded-lg text-left
+                        ${!isCurrentMonth(date) ? 'bg-gray-50 text-gray-400' : 'bg-white text-gray-900'}
+                        ${isToday(date) ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}
+                        ${isSelectedDate(date) ? 'ring-2 ring-blue-600' : ''}
+                        hover:border-blue-300 hover:shadow-md transition-all
+                      `}
+                    >
+                      <div className={`text-sm font-semibold mb-2 ${isToday(date) ? 'text-blue-600' : ''}`}>
+                        {date.getDate()}
+                      </div>
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 3).map(event => (
+                          <div
+                            key={event.id}
+                            className={`text-xs p-1 rounded truncate ${
+                              (event as any).isTeamEvent 
+                                ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-500' 
+                                : 'bg-blue-100 text-blue-700 border-l-2 border-blue-500'
+                            }`}
+                            title={event.title}
+                          >
+                            {formatTime(event.startTime)} {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-gray-500 font-medium">
+                            +{dayEvents.length - 3} more
+                          </div>
+                        )}
+                        {dayEvents.length === 0 && isCurrentMonth(date) && (
+                          <div className="text-xs text-gray-400 opacity-0 group-hover:opacity-100">
+                            Click to add
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              
+              <div className="mt-4 pt-4 border-t text-xs text-gray-600 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500"></div>
+                  <span>Your events</span>
+                </div>
+                {isAdmin && selectedUsers.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-purple-100 border-l-2 border-purple-500"></div>
+                    <span>Team events</span>
+                  </div>
+                )}
+                <span className="ml-auto">Click any day to add event or view details</span>
+              </div>
+            </div>
+            )}
+            
+            {/* WEEK VIEW */}
+            {expandedView === 'week' && (
             <div className="overflow-x-auto">
-              {/* Time grid header */}
-              <div className="grid grid-cols-8 gap-px bg-gray-200 border rounded-lg overflow-hidden">
-                {/* Time column */}
-                <div className="bg-white font-semibold text-center py-2 text-sm">Time</div>
-                {/* Day columns */}
+              {/* Week grid header */}
+              <div className="grid grid-cols-8 gap-px bg-gray-200 border rounded-lg overflow-hidden mb-px">
+                <div className="bg-white font-semibold text-center py-3 text-sm">Time</div>
                 {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
                   const date = new Date(selectedDate || new Date().toISOString().split('T')[0])
-                  date.setDate(date.getDate() - date.getDay() + dayOffset) // Start from Sunday
+                  date.setDate(date.getDate() - date.getDay() + dayOffset)
                   return (
                     <div key={dayOffset} className="bg-white text-center py-2">
                       <div className="font-semibold text-sm">
                         {date.toLocaleDateString('en-US', { weekday: 'short' })}
                       </div>
-                      <div className={`text-xs ${isToday(date) ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
+                      <div className={`text-sm ${isToday(date) ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
                         {date.getDate()}
                       </div>
                     </div>
@@ -441,79 +581,155 @@ export default function CalendarPage() {
                 })}
               </div>
               
-              {/* Time slots grid */}
-              <div className="mt-px">
-                {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => (
-                  <div key={hour} className="grid grid-cols-8 gap-px bg-gray-200">
-                    {/* Time label */}
-                    <div className="bg-white px-2 py-3 text-xs text-gray-600 font-medium">
-                      {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                    </div>
-                    
-                    {/* Day cells */}
-                    {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
-                      const date = new Date(selectedDate || new Date().toISOString().split('T')[0])
-                      date.setDate(date.getDate() - date.getDay() + dayOffset)
-                      const dateStr = date.toISOString().split('T')[0]
-                      const eventsInSlot = getEventsForTimeSlot(dateStr, hour)
-                      
-                      return (
-                        <button
-                          key={`${dateStr}-${hour}`}
-                          onClick={() => handleQuickAddEvent(dateStr, hour)}
-                          className="bg-white hover:bg-blue-50 px-2 py-3 text-left min-h-[60px] relative group transition-colors"
-                        >
-                          {eventsInSlot.length > 0 ? (
-                            <div className="space-y-1">
-                              {eventsInSlot.map(event => (
-                                <div
-                                  key={event.id}
-                                  className={`text-xs p-1 rounded ${
-                                    (event as any).isTeamEvent 
-                                      ? 'bg-purple-100 text-purple-700 border-l-2 border-purple-500' 
-                                      : 'bg-blue-100 text-blue-700 border-l-2 border-blue-500'
-                                  }`}
-                                >
-                                  <div className="font-semibold truncate">{event.title}</div>
-                                  {(event as any).teamMemberName && (
-                                    <div className="text-[10px]">{(event as any).teamMemberName}</div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="opacity-0 group-hover:opacity-100 flex items-center justify-center h-full">
-                              <Plus className="w-4 h-4 text-gray-400" />
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })}
+              {/* Time slots */}
+              {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(hour => (
+                <div key={hour} className="grid grid-cols-8 gap-px bg-gray-200 mb-px">
+                  <div className="bg-white px-2 py-4 text-xs text-gray-600 font-medium">
+                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="mt-4 text-xs text-gray-600 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-100 border-l-2 border-blue-500"></div>
-                <span>Your events</span>
-              </div>
-              {isAdmin && selectedUsers.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-purple-100 border-l-2 border-purple-500"></div>
-                  <span>Team events</span>
+                  {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                    const date = new Date(selectedDate || new Date().toISOString().split('T')[0])
+                    date.setDate(date.getDate() - date.getDay() + dayOffset)
+                    const dateStr = date.toISOString().split('T')[0]
+                    const eventsInSlot = getEventsForTimeSlot(dateStr, hour)
+                    
+                    return (
+                      <button
+                        key={`${dateStr}-${hour}`}
+                        onClick={() => handleQuickAddEvent(dateStr, hour)}
+                        className="bg-white hover:bg-blue-50 px-2 py-4 text-left min-h-[60px] relative group"
+                      >
+                        {eventsInSlot.map(event => (
+                          <div
+                            key={event.id}
+                            className={`text-xs p-1 rounded mb-1 ${
+                              (event as any).isTeamEvent 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
+                            {event.title}
+                          </div>
+                        ))}
+                        {eventsInSlot.length === 0 && (
+                          <div className="opacity-0 group-hover:opacity-100 text-center">
+                            <Plus className="w-4 h-4 text-gray-400 mx-auto" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
-              )}
-              <span className="ml-auto">Click any time slot to add event</span>
+              ))}
             </div>
+            )}
+            
+            {/* DAY VIEW */}
+            {expandedView === 'day' && (
+            <div>
+              <div className="text-center mb-4 py-3 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-bold">
+                  {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                </h3>
+              </div>
+              
+              <div className="space-y-px">
+                {[8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map(hour => {
+                  const eventsInSlot = getEventsForTimeSlot(selectedDate, hour)
+                  
+                  return (
+                    <div key={hour} className="flex border-b">
+                      <div className="w-24 py-4 px-3 bg-gray-50 text-sm font-medium text-gray-600">
+                        {hour === 12 ? '12:00 PM' : hour > 12 ? `${hour - 12}:00 PM` : `${hour}:00 AM`}
+                      </div>
+                      <button
+                        onClick={() => handleQuickAddEvent(selectedDate, hour)}
+                        className="flex-1 px-4 py-4 hover:bg-blue-50 text-left group min-h-[80px]"
+                      >
+                        {eventsInSlot.length > 0 ? (
+                          <div className="space-y-2">
+                            {eventsInSlot.map(event => (
+                              <div
+                                key={event.id}
+                                className={`p-3 rounded-lg border-l-4 ${
+                                  (event as any).isTeamEvent 
+                                    ? 'bg-purple-50 border-purple-500' 
+                                    : 'bg-blue-50 border-blue-500'
+                                }`}
+                              >
+                                <div className="font-semibold">{event.title}</div>
+                                <div className="text-sm text-gray-600 mt-1">
+                                  {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                                </div>
+                                {(event as any).teamMemberName && (
+                                  <div className="text-xs text-purple-600 mt-1">
+                                    by {(event as any).teamMemberName}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-2 text-gray-400">
+                            <Plus className="w-4 h-4" />
+                            <span className="text-sm">Add event</span>
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            )}
+            
+            {/* YEAR VIEW */}
+            {expandedView === 'year' && (
+            <div>
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+                {Array.from({ length: 12 }, (_, monthIndex) => {
+                  const monthDate = new Date(currentMonth.getFullYear(), monthIndex, 1)
+                  const monthEvents = displayEvents.filter(e => {
+                    const eventDate = new Date(e.startTime)
+                    return eventDate.getMonth() === monthIndex && eventDate.getFullYear() === currentMonth.getFullYear()
+                  })
+                  
+                  return (
+                    <Card key={monthIndex} className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => {
+                      setCurrentMonth(monthDate)
+                      setExpandedView('month')
+                      generateCalendarDays(monthDate)
+                    }}>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">
+                          {monthDate.toLocaleDateString('en-US', { month: 'long' })}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {monthEvents.length}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {monthEvents.length === 1 ? 'event' : 'events'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+              <div className="mt-4 text-sm text-gray-600 text-center">
+                Click any month to view detailed calendar
+              </div>
+            </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      <div className={`grid lg:grid-cols-4 gap-6 ${expandedCalendar ? 'lg:grid-cols-1' : ''}`}>
+      {!expandedCalendar && (
+      <div className="grid lg:grid-cols-4 gap-6">
         {/* LEFT SIDEBAR - Mini Calendar */}
-        {!expandedCalendar && (
+        {viewMode === 'list' && (
         <div className="lg:col-span-1 space-y-6">
           {/* Mini Calendar Widget */}
           <Card>
@@ -623,8 +839,94 @@ export default function CalendarPage() {
         </div>
         )}
 
-        {/* MAIN CONTENT - Events List */}
-        <Card className={expandedCalendar ? 'lg:col-span-4' : 'lg:col-span-3'}>
+        {/* MAIN CONTENT */}
+        {viewMode === 'month' ? (
+          <Card className="lg:col-span-4">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button onClick={previousMonth} className="p-2 hover:bg-gray-100 rounded">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <CardTitle>
+                    {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </CardTitle>
+                  <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+                <span className="text-sm text-gray-600">
+                  {displayEvents.length} events this month
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-2 mb-2">
+                {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                  <div key={day} className="text-center text-sm font-bold text-gray-700 py-3 bg-gray-50 rounded">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              
+              {/* Calendar days */}
+              <div className="grid grid-cols-7 gap-2">
+                {calendarDays.map((date, index) => {
+                  const dateStr = date.toISOString().split('T')[0]
+                  const dayEvents = displayEvents.filter(e => e.startTime.split('T')[0] === dateStr)
+                  
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedDate(dateStr)
+                        if (dayEvents.length === 0 && isCurrentMonth(date)) {
+                          const title = prompt(`Add event for ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}:`)
+                          if (title) {
+                            handleQuickAddEvent(dateStr, 9)
+                          }
+                        }
+                      }}
+                      className={`
+                        min-h-[100px] p-2 border-2 rounded-lg text-left transition-all
+                        ${!isCurrentMonth(date) ? 'bg-gray-50 text-gray-400 border-gray-100' : 'bg-white border-gray-200'}
+                        ${isToday(date) ? 'border-blue-400 bg-blue-50' : ''}
+                        ${isSelectedDate(date) ? 'ring-2 ring-blue-600' : ''}
+                        hover:border-blue-300 hover:shadow-md
+                      `}
+                    >
+                      <div className={`text-sm font-semibold mb-1 ${isToday(date) ? 'text-blue-600' : ''}`}>
+                        {date.getDate()}
+                      </div>
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 2).map(event => (
+                          <div
+                            key={event.id}
+                            className={`text-xs p-1 rounded truncate ${
+                              (event as any).isTeamEvent 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                            title={event.title}
+                          >
+                            {formatTime(event.startTime)} {event.title}
+                          </div>
+                        ))}
+                        {dayEvents.length > 2 && (
+                          <div className="text-xs text-gray-500 font-medium">
+                            +{dayEvents.length - 2} more
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+        <Card className="lg:col-span-3">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>
@@ -790,7 +1092,9 @@ export default function CalendarPage() {
           </Card>
           </div>
         </Card>
+        )}
       </div>
+      )}
 
       {/* Admin Only - Team Calendars */}
       {isAdmin && (
