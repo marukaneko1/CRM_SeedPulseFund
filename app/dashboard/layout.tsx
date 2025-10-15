@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { cn } from "@/lib/utils"
+import { UpdateBanner } from "@/components/update-banner"
 import {
   Home,
   Bell,
@@ -105,8 +106,22 @@ export default function DashboardLayout({
     await signOut({ callbackUrl: "/auth/login" })
   }
 
+  useEffect(() => {
+    // Check if user should see onboarding
+    const isNewUser = localStorage.getItem('new_user')
+    const hasSeenOnboarding = localStorage.getItem('onboarding_completed')
+    
+    if (isNewUser && !hasSeenOnboarding && pathname === '/dashboard') {
+      localStorage.removeItem('new_user')
+      router.push('/dashboard/onboarding')
+    }
+  }, [pathname, router])
+
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Update Banner */}
+      <UpdateBanner />
+      
       {/* Left Sidebar */}
       <div className="w-80 bg-gray-900 text-white flex flex-col">
         {/* Header */}
