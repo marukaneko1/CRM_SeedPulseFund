@@ -294,6 +294,8 @@ export default function MessagesPage() {
                   onRespondToEvent={handleRespondToEvent}
                 />
               ))}
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500">
@@ -302,6 +304,18 @@ export default function MessagesPage() {
                 <p className="text-lg font-semibold">No messages yet</p>
                 <p className="text-sm">Start the conversation below</p>
               </div>
+            </div>
+          )}
+          
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              </div>
+              <span>You are typing...</span>
             </div>
           )}
         </div>
