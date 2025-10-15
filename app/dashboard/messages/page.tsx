@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Send, Hash, Users } from "lucide-react"
+import { Send, Hash, Users, ChevronLeft, ChevronRight, Menu } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MessageComposer } from "@/components/messaging/message-composer"
 import { MessageItem } from "@/components/messaging/message-item"
@@ -76,6 +76,7 @@ export default function MessagesPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [isTyping, setIsTyping] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -129,9 +130,14 @@ export default function MessagesPage() {
     }
   }, [selectedChannel])
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (for both sender and receiver)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Small delay to ensure DOM is updated, works for all users
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [messages])
 
   // Handle typing indicator
@@ -244,9 +250,14 @@ export default function MessagesPage() {
   return (
     <div className="h-screen flex">
       {/* Channels Sidebar */}
-      <div className="w-64 bg-gray-900 text-white">
+      <div className={cn(
+        "bg-gray-900 text-white transition-all duration-300",
+        isSidebarOpen ? "w-64" : "w-0 overflow-hidden"
+      )}>
         <div className="p-4">
-          <h2 className="text-lg font-semibold mb-4">Channels</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Channels</h2>
+          </div>
           <div className="space-y-1">
             {channels.map((channel) => (
               <button
@@ -271,15 +282,33 @@ export default function MessagesPage() {
       <div className="flex-1 flex flex-col bg-white">
         {/* Channel Header */}
         <div className="border-b px-6 py-4">
-          {selectedChannel && (
-            <div className="flex items-center gap-2">
-              <Hash className="w-5 h-5" />
-              <div>
-                <h3 className="font-semibold">{selectedChannel.name}</h3>
-                <p className="text-sm text-gray-600">{selectedChannel.description}</p>
+          <div className="flex items-center gap-4">
+            {/* Toggle Sidebar Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="flex items-center gap-2"
+            >
+              {isSidebarOpen ? (
+                <ChevronLeft className="w-5 h-5" />
+              ) : (
+                <ChevronRight className="w-5 h-5" />
+              )}
+              <span className="text-sm">{isSidebarOpen ? 'Hide' : 'Show'} Channels</span>
+            </Button>
+
+            {/* Channel Info */}
+            {selectedChannel && (
+              <div className="flex items-center gap-2">
+                <Hash className="w-5 h-5" />
+                <div>
+                  <h3 className="font-semibold">{selectedChannel.name}</h3>
+                  <p className="text-sm text-gray-600">{selectedChannel.description}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Messages */}

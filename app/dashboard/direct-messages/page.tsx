@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { MessageComposer } from '@/components/messaging/message-composer'
 import { MessageItem } from '@/components/messaging/message-item'
+import { cn } from '@/lib/utils'
 import { 
   Search, 
   Plus, 
@@ -14,7 +15,9 @@ import {
   Users,
   ArrowLeft,
   Phone,
-  Video
+  Video,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 interface DirectChat {
@@ -65,6 +68,7 @@ export default function DirectMessagesPage() {
   const [showNewChat, setShowNewChat] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isTyping, setIsTyping] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -135,9 +139,14 @@ export default function DirectMessagesPage() {
     return () => clearInterval(interval)
   }, [selectedChat])
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change (for both sender and receiver)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Small delay to ensure DOM is updated
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
+    
+    return () => clearTimeout(timer)
   }, [messages])
 
   // Handle typing indicator
@@ -288,7 +297,10 @@ export default function DirectMessagesPage() {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className={cn(
+        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300",
+        isSidebarOpen ? "w-80" : "w-0 overflow-hidden"
+      )}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
@@ -373,39 +385,51 @@ export default function DirectMessagesPage() {
         {selectedChat ? (
           <>
             {/* Chat Header */}
-            <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedChat(null)}
-                  className="md:hidden"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
-                  {getOtherUser(selectedChat).avatar ? (
-                    <img 
-                      src={getOtherUser(selectedChat).avatar} 
-                      alt={getOtherUser(selectedChat).name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    getOtherUser(selectedChat).name.charAt(0).toUpperCase()
-                  )}
+            <div className="bg-white border-b border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {/* Toggle Sidebar Button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    className="flex items-center gap-2"
+                  >
+                    {isSidebarOpen ? (
+                      <ChevronLeft className="w-5 h-5" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5" />
+                    )}
+                    <span className="text-sm">{isSidebarOpen ? 'Hide' : 'Show'} Chats</span>
+                  </Button>
+
+                  {/* User Info */}
+                  <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                    {getOtherUser(selectedChat).avatar ? (
+                      <img 
+                        src={getOtherUser(selectedChat).avatar} 
+                        alt={getOtherUser(selectedChat).name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      getOtherUser(selectedChat).name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <h2 className="font-semibold">{getOtherUser(selectedChat).name}</h2>
+                    <p className="text-sm text-gray-500">{getOtherUser(selectedChat).email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-semibold">{getOtherUser(selectedChat).name}</h2>
-                  <p className="text-sm text-gray-500">{getOtherUser(selectedChat).email}</p>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm">
+                    <Phone className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm">
+                    <Video className="w-4 h-4" />
+                  </Button>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm">
-                  <Phone className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <Video className="w-4 h-4" />
-                </Button>
               </div>
             </div>
 
