@@ -1,3 +1,6 @@
+"use client"
+
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -14,7 +17,8 @@ import {
   ChevronDown
 } from "lucide-react"
 
-const deals = [
+// Demo deals only for admin
+const demoDeals = [
   { 
     name: "Helix", 
     status: "Target Lead", 
@@ -73,6 +77,11 @@ const deals = [
 ]
 
 export default function DashboardPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  const deals = isAdmin ? demoDeals : []
+  
   return (
     <div className="flex-1 bg-white flex flex-col">
       {/* Header */}

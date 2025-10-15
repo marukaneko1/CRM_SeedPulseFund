@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,14 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Mail, Send, Inbox, Archive, Star, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const folders = [
-  { id: "inbox", name: "Inbox", icon: Inbox, count: 12 },
-  { id: "sent", name: "Sent", icon: Send, count: 0 },
-  { id: "starred", name: "Starred", icon: Star, count: 3 },
-  { id: "archive", name: "Archive", icon: Archive, count: 0 },
-]
-
-const emails = [
+// Demo emails only for admin
+const demoEmails = [
   {
     id: "1",
     from: "john@startupx.com",
@@ -43,6 +38,18 @@ const emails = [
 ]
 
 export default function EmailPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
+  const emails = isAdmin ? demoEmails : []
+  
+  const folders = [
+    { id: "inbox", name: "Inbox", icon: Inbox, count: isAdmin ? 12 : 0 },
+    { id: "sent", name: "Sent", icon: Send, count: 0 },
+    { id: "starred", name: "Starred", icon: Star, count: isAdmin ? 3 : 0 },
+    { id: "archive", name: "Archive", icon: Archive, count: 0 },
+  ]
+  
   const [selectedFolder, setSelectedFolder] = useState(folders[0])
   const [showCompose, setShowCompose] = useState(false)
 

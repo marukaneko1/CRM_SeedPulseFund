@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Mail, Phone, Building } from "lucide-react"
 
-const contacts = [
+// Demo contacts only for admin
+const demoContacts = [
   {
     id: "1",
     name: "John Doe",
@@ -46,7 +48,12 @@ const contacts = [
 ]
 
 export default function ContactsPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
   const [searchQuery, setSearchQuery] = useState("")
+  
+  const contacts = isAdmin ? demoContacts : []
 
   const filteredContacts = contacts.filter(contact =>
     contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

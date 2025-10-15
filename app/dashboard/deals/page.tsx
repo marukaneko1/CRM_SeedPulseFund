@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -16,7 +17,8 @@ const stages = [
   { id: "closed", name: "Closed Won", color: "bg-green-200" },
 ]
 
-const deals = [
+// Demo deals only for admin
+const demoDeals = [
   { id: "1", title: "Startup X - Series A", amount: 2000000, stage: "negotiation", company: "Startup X" },
   { id: "2", title: "TechVenture - Seed", amount: 500000, stage: "proposal", company: "TechVenture" },
   { id: "3", title: "InnovateLab - Series B", amount: 5000000, stage: "meeting", company: "InnovateLab" },
@@ -25,7 +27,12 @@ const deals = [
 ]
 
 export default function DealsPage() {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.email === 'admin@demo.com'
+  
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
+  
+  const deals = isAdmin ? demoDeals : []
 
   const getDealsByStage = (stageId: string) => {
     return deals.filter(deal => deal.stage === stageId)
