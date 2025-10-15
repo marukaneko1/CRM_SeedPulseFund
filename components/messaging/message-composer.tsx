@@ -103,51 +103,89 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
+      console.log('Requesting microphone access...')
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      })
+      
+      console.log('Microphone access granted, starting recording...')
+      
+      // Check browser support for audio formats
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') 
+        ? 'audio/webm' 
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/wav'
+      
+      console.log('Using MIME type:', mimeType)
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
       const audioChunks: Blob[] = []
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data)
+        if (event.data.size > 0) {
+          audioChunks.push(event.data)
+          console.log('Audio chunk received, size:', event.data.size)
+        }
       }
 
       mediaRecorder.onstop = async () => {
-        // Use webm format which is better supported
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' })
+        console.log('Recording stopped, processing audio...')
+        console.log('Total chunks:', audioChunks.length)
+        
+        const audioBlob = new Blob(audioChunks, { type: mimeType })
+        console.log('Audio blob created, size:', audioBlob.size, 'bytes')
+        
+        if (audioBlob.size === 0) {
+          alert('Recording failed: No audio data captured')
+          stream.getTracks().forEach(track => track.stop())
+          return
+        }
+
         const timestamp = Date.now()
-        const audioFile = new File([audioBlob], `voice-${timestamp}.webm`, { type: 'audio/webm' })
-        
-        console.log('Voice recording stopped, file size:', audioBlob.size)
-        
+        const extension = mimeType.split('/')[1]
+        const audioFile = new File([audioBlob], `voice-${timestamp}.${extension}`, { type: mimeType })
+
+        console.log('Voice file created:', {
+          name: audioFile.name,
+          size: audioFile.size,
+          type: audioFile.type
+        })
+
         // Upload voice message
         const formData = new FormData()
         formData.append('file', audioFile)
-        
+
         setIsUploading(true)
         try {
-          console.log('Uploading voice message...')
+          console.log('Uploading voice message to /api/upload...')
           const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData
           })
+          
           const result = await response.json()
-          
-          console.log('Upload response:', result)
-          
+          console.log('Upload response:', { status: response.status, result })
+
           if (response.ok) {
-            console.log('Voice message uploaded, sending...', result)
+            console.log('Voice message uploaded successfully, sending message...')
             onSendMessage({
               type: 'VOICE',
               content: 'Voice message',
               attachments: [result]
             })
+            console.log('Voice message sent!')
           } else {
-            console.error('Upload failed:', result)
+            console.error('Upload failed with status:', response.status, result)
             alert('Failed to upload voice message: ' + (result.error || 'Unknown error'))
           }
         } catch (error) {
           console.error('Error uploading voice message:', error)
-          alert('Error uploading voice message. Please try again.')
+          alert('Error uploading voice message. Please check your connection and try again.')
         } finally {
           setIsUploading(false)
         }
@@ -155,18 +193,32 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
         stream.getTracks().forEach(track => track.stop())
       }
 
+      mediaRecorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event)
+        alert('Recording error occurred. Please try again.')
+      }
+
       mediaRecorderRef.current = mediaRecorder
-      mediaRecorder.start()
+      mediaRecorder.start(100) // Collect data every 100ms
       setIsRecording(true)
       setRecordingTime(0)
+
+      console.log('Recording started successfully')
 
       // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1)
       }, 1000)
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accessing microphone:', error)
+      if (error.name === 'NotAllowedError') {
+        alert('Microphone access denied. Please allow microphone access to record voice messages.')
+      } else if (error.name === 'NotFoundError') {
+        alert('No microphone found. Please connect a microphone and try again.')
+      } else {
+        alert('Error accessing microphone: ' + error.message)
+      }
     }
   }
 
