@@ -118,6 +118,11 @@ export default function MessagesPage() {
 
     if (selectedChannel) {
       fetchMessages()
+      
+      // Poll for new messages every 2 seconds for live updates
+      const interval = setInterval(fetchMessages, 2000)
+      
+      return () => clearInterval(interval)
     }
   }, [selectedChannel])
 
@@ -136,7 +141,11 @@ export default function MessagesPage() {
 
       if (response.ok) {
         const newMessage = await response.json()
+        console.log('Message sent successfully:', newMessage)
         setMessages(prev => [...prev, newMessage])
+      } else {
+        const errorData = await response.json()
+        console.error('Error sending message:', errorData)
       }
     } catch (error) {
       console.error('Error sending message:', error)
