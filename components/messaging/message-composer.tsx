@@ -62,37 +62,92 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
   })
 
   const handleSendMessage = useCallback(() => {
-    if (!message.trim() && attachments.length === 0 && !showPollForm && !showEventForm) return
+    console.log('=== handleSendMessage called ===', { 
+      showPollForm, 
+      showEventForm, 
+      pollData, 
+      eventData,
+      message,
+      attachments 
+    })
 
-    let messageData: any = {
-      type: 'TEXT',
-      content: message,
-      attachments: attachments
-    }
-
+    // Handle Poll
     if (showPollForm) {
-      messageData = {
+      const validOptions = pollData.options.filter(opt => opt.trim())
+      console.log('Sending POLL with options:', validOptions)
+      
+      if (!pollData.question.trim()) {
+        alert('Please enter a poll question')
+        return
+      }
+      if (validOptions.length < 2) {
+        alert('Please add at least 2 options')
+        return
+      }
+
+      onSendMessage({
         type: 'POLL',
-        poll: pollData
-      }
+        content: pollData.question,
+        poll: {
+          question: pollData.question,
+          options: validOptions.map(text => ({ text, votes: [] })),
+          expiresAt: pollData.expiresAt || null
+        }
+      })
+      
+      setShowPollForm(false)
+      setPollData({ question: '', options: ['', ''], expiresAt: '' })
+      console.log('✅ Poll sent!')
+      return
     }
 
+    // Handle Event
     if (showEventForm) {
-      messageData = {
-        type: 'EVENT',
-        event: eventData
+      console.log('Sending EVENT:', eventData)
+      
+      if (!eventData.title.trim()) {
+        alert('Please enter an event title')
+        return
       }
+      if (!eventData.startDate) {
+        alert('Please select a start date')
+        return
+      }
+
+      onSendMessage({
+        type: 'EVENT',
+        content: eventData.title,
+        event: {
+          title: eventData.title,
+          description: eventData.description || '',
+          startDate: eventData.startDate,
+          endDate: eventData.endDate || eventData.startDate,
+          location: eventData.location || ''
+        }
+      })
+      
+      setShowEventForm(false)
+      setEventData({ title: '', description: '', startDate: '', endDate: '', location: '' })
+      console.log('✅ Event sent!')
+      return
     }
 
-    onSendMessage(messageData)
-    
-    // Reset form
-    setMessage('')
-    setAttachments([])
-    setShowPollForm(false)
-    setShowEventForm(false)
-    setPollData({ question: '', options: ['', ''], expiresAt: '' })
-    setEventData({ title: '', description: '', startDate: '', endDate: '', location: '' })
+    // Handle Text/File messages
+    if (message.trim() || attachments.length > 0) {
+      console.log('Sending TEXT/FILE message')
+      onSendMessage({
+        type: attachments.length > 0 ? 'FILE' : 'TEXT',
+        content: message,
+        attachments
+      })
+      
+      setMessage('')
+      setAttachments([])
+      console.log('✅ Message sent!')
+      return
+    }
+
+    console.warn('Nothing to send')
   }, [message, attachments, showPollForm, showEventForm, pollData, eventData, onSendMessage])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

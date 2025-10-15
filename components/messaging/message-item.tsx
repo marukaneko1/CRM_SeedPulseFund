@@ -133,20 +133,38 @@ export function MessageItem({ message, onVotePoll, onRespondToEvent }: MessageIt
         )
 
       case 'VOICE':
+        const voiceUrl = message.attachments?.[0]?.fileUrl
+        console.log('Voice message URL:', voiceUrl)
+        
         return (
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleVoicePlay}
-              className="flex items-center gap-2"
-            >
-              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              <span>Voice Message</span>
-            </Button>
-            <span className="text-sm text-gray-500">
-              {message.attachments?.[0]?.filename}
-            </span>
+          <div className="bg-blue-50 p-4 rounded-lg space-y-3">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleVoicePlay}
+                className="flex items-center gap-2 bg-white hover:bg-blue-100"
+              >
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                <span>{isPlaying ? 'Pause' : 'Play'}</span>
+              </Button>
+              <span className="text-sm text-gray-600">
+                {message.attachments?.[0]?.filename || 'Voice message'}
+              </span>
+            </div>
+            {/* Built-in audio controls as backup */}
+            {voiceUrl && (
+              <audio 
+                controls 
+                className="w-full h-10"
+                preload="metadata"
+              >
+                <source src={voiceUrl} type="audio/webm" />
+                <source src={voiceUrl} type="audio/mp4" />
+                <source src={voiceUrl} type="audio/wav" />
+                Your browser does not support audio playback.
+              </audio>
+            )}
           </div>
         )
 
