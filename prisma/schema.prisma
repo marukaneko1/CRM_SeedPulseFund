@@ -28,6 +28,10 @@ model User {
   emailsSent    Email[]   @relation("EmailSender")
   calendarEvents CalendarEvent[]
   activities    Activity[]
+  directChats1  DirectChat[] @relation("DirectChatUser1")
+  directChats2  DirectChat[] @relation("DirectChatUser2")
+  pollVotes     PollVote[]
+  eventAttendees EventAttendee[]
   
   @@map("users")
 }
@@ -143,17 +147,115 @@ model PortfolioMetric {
 }
 
 model Message {
-  id          String      @id @default(cuid())
-  content     String
+  id          String            @id @default(cuid())
+  content     String?
+  type        String            @default("TEXT") // TEXT, VOICE, FILE, IMAGE, POLL, EVENT, AI_IMAGE
   channelId   String?
-  channel     Channel?    @relation(fields: [channelId], references: [id])
+  channel     Channel?          @relation(fields: [channelId], references: [id])
+  directChatId String?
+  directChat  DirectChat?       @relation(fields: [directChatId], references: [id])
   senderId    String
-  sender      User        @relation("MessageSender", fields: [senderId], references: [id])
-  isRead      Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  sender      User              @relation("MessageSender", fields: [senderId], references: [id])
+  attachments MessageAttachment[]
+  poll        Poll?
+  event       Event?
+  isRead      Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   
   @@map("messages")
+}
+
+model DirectChat {
+  id        String    @id @default(cuid())
+  user1Id   String
+  user1     User      @relation("DirectChatUser1", fields: [user1Id], references: [id])
+  user2Id   String
+  user2     User      @relation("DirectChatUser2", fields: [user2Id], references: [id])
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  @@unique([user1Id, user2Id])
+  @@map("direct_chats")
+}
+
+model MessageAttachment {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  filename  String
+  fileType  String   // image, video, audio, document
+  fileSize  Int
+  fileUrl   String
+  createdAt DateTime @default(now())
+  
+  @@map("message_attachments")
+}
+
+model Poll {
+  id        String      @id @default(cuid())
+  messageId String      @unique
+  message   Message     @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  question  String
+  options   PollOption[]
+  votes     PollVote[]
+  createdAt DateTime    @default(now())
+  expiresAt DateTime?
+  
+  @@map("polls")
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  text   String
+  votes  PollVote[]
+  
+  @@map("poll_options")
+}
+
+model PollVote {
+  id       String      @id @default(cuid())
+  pollId   String
+  poll     Poll        @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId String
+  option   PollOption  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User        @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+  
+  @@unique([pollId, userId])
+  @@map("poll_votes")
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  messageId   String    @unique
+  message     Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  attendees   EventAttendee[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("events")
+}
+
+model EventAttendee {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+  status  String @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  
+  @@unique([eventId, userId])
+  @@map("event_attendees")
 }
 
 model Channel {
