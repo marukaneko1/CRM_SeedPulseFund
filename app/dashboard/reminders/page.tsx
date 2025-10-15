@@ -193,7 +193,8 @@ export default function RemindersPage() {
 
         {/* Reminders List */}
         <div className="space-y-3">
-          {filteredReminders.length > 0 ? filteredReminders.map((reminder) => (
+          {filteredReminders.length > 0 ? (
+            filteredReminders.map((reminder) => (
             <div
               key={reminder.id}
               className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md ${
@@ -248,8 +249,8 @@ export default function RemindersPage() {
                 </div>
               </div>
             </div>
-          ))}
-          ) : (
+          ))
+        ) : (
             <div className="text-center text-gray-500 py-12">
               <p>No reminders yet. Add one to get started!</p>
             </div>
