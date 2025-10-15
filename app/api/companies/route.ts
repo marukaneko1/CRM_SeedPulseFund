@@ -10,25 +10,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get only THIS user's contacts
-    const contacts = await prisma.contact.findMany({
+    // Get only THIS user's companies
+    const companies = await prisma.company.findMany({
       where: { userId: session.user.id },
       include: {
-        company: {
+        _count: {
           select: {
-            id: true,
-            name: true,
+            contacts: true,
+            deals: true,
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json(contacts)
+    return NextResponse.json(companies)
   } catch (error) {
-    console.error('Error fetching contacts:', error)
+    console.error('Error fetching companies:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch contacts' },
+      { error: 'Failed to fetch companies' },
       { status: 500 }
     )
   }
@@ -43,46 +43,39 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, email, phone, position, linkedin, twitter, notes, companyId } = body
+    const { name, website, industry, stage, description, logo, foundedYear, teamSize, location } = body
 
     // Validation
-    if (!firstName || !lastName || !email) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'First name, last name, and email are required' },
+        { error: 'Company name is required' },
         { status: 400 }
       )
     }
 
-    // Create contact for THIS user
-    const contact = await prisma.contact.create({
+    // Create company for THIS user
+    const company = await prisma.company.create({
       data: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        position,
-        linkedin,
-        twitter,
-        notes,
-        companyId,
+        name,
+        website,
+        industry,
+        stage,
+        description,
+        logo,
+        foundedYear,
+        teamSize,
+        location,
         userId: session.user.id,
-      },
-      include: {
-        company: {
-          select: {
-            id: true,
-            name: true,
-          }
-        }
       }
     })
 
-    return NextResponse.json(contact, { status: 201 })
+    return NextResponse.json(company, { status: 201 })
   } catch (error) {
-    console.error('Error creating contact:', error)
+    console.error('Error creating company:', error)
     return NextResponse.json(
-      { error: 'Failed to create contact' },
+      { error: 'Failed to create company' },
       { status: 500 }
     )
   }
 }
+

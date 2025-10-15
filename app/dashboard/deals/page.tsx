@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,30 +9,57 @@ import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/utils"
 
 const stages = [
-  { id: "lead", name: "Lead", color: "bg-gray-200" },
-  { id: "qualified", name: "Qualified", color: "bg-blue-200" },
-  { id: "meeting", name: "Meeting", color: "bg-purple-200" },
-  { id: "proposal", name: "Proposal", color: "bg-yellow-200" },
-  { id: "negotiation", name: "Negotiation", color: "bg-orange-200" },
-  { id: "closed", name: "Closed Won", color: "bg-green-200" },
+  { id: "LEAD", name: "Lead", color: "bg-gray-200" },
+  { id: "QUALIFIED", name: "Qualified", color: "bg-blue-200" },
+  { id: "MEETING", name: "Meeting", color: "bg-purple-200" },
+  { id: "PROPOSAL", name: "Proposal", color: "bg-yellow-200" },
+  { id: "NEGOTIATION", name: "Negotiation", color: "bg-orange-200" },
+  { id: "CLOSED", name: "Closed Won", color: "bg-green-200" },
 ]
 
-// Demo deals only for admin
-const demoDeals = [
-  { id: "1", title: "Startup X - Series A", amount: 2000000, stage: "negotiation", company: "Startup X" },
-  { id: "2", title: "TechVenture - Seed", amount: 500000, stage: "proposal", company: "TechVenture" },
-  { id: "3", title: "InnovateLab - Series B", amount: 5000000, stage: "meeting", company: "InnovateLab" },
-  { id: "4", title: "GrowthCo - Seed", amount: 750000, stage: "qualified", company: "GrowthCo" },
-  { id: "5", title: "AI Startup - Pre-seed", amount: 250000, stage: "lead", company: "AI Startup" },
-]
+interface Deal {
+  id: string
+  title: string
+  amount?: number
+  stage: string
+  probability: number
+  company?: {
+    id: string
+    name: string
+  }
+  contact?: {
+    id: string
+    firstName: string
+    lastName: string
+  }
+}
 
 export default function DealsPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  
-  const deals = isAdmin ? demoDeals : []
+
+  // Fetch deals from API
+  useEffect(() => {
+    async function fetchDeals() {
+      try {
+        const response = await fetch('/api/deals')
+        if (response.ok) {
+          const data = await response.json()
+          setDeals(data)
+        }
+      } catch (error) {
+        console.error('Error fetching deals:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session) {
+      fetchDeals()
+    }
+  }, [session])
 
   const getDealsByStage = (stageId: string) => {
     return deals.filter(deal => deal.stage === stageId)

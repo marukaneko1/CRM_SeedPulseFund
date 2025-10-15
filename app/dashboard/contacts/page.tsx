@@ -1,63 +1,55 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Search, Mail, Phone, Building } from "lucide-react"
 
-// Demo contacts only for admin
-const demoContacts = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@startupx.com",
-    phone: "+1 (555) 123-4567",
-    company: "Startup X",
-    position: "CEO",
-    avatar: "JD",
-  },
-  {
-    id: "2",
-    name: "Sarah Smith",
-    email: "sarah@innovatelab.io",
-    phone: "+1 (555) 234-5678",
-    company: "InnovateLab",
-    position: "Founder",
-    avatar: "SS",
-  },
-  {
-    id: "3",
-    name: "Mike Johnson",
-    email: "mike@techventures.com",
-    phone: "+1 (555) 345-6789",
-    company: "TechVentures",
-    position: "CTO",
-    avatar: "MJ",
-  },
-  {
-    id: "4",
-    name: "Emily Chen",
-    email: "emily@growthco.com",
-    phone: "+1 (555) 456-7890",
-    company: "GrowthCo",
-    position: "VP Product",
-    avatar: "EC",
-  },
-]
+interface Contact {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone?: string
+  position?: string
+  company?: {
+    id: string
+    name: string
+  }
+}
 
 export default function ContactsPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  
-  const contacts = isAdmin ? demoContacts : []
+
+  // Fetch contacts from API
+  useEffect(() => {
+    async function fetchContacts() {
+      try {
+        const response = await fetch('/api/contacts')
+        if (response.ok) {
+          const data = await response.json()
+          setContacts(data)
+        }
+      } catch (error) {
+        console.error('Error fetching contacts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session) {
+      fetchContacts()
+    }
+  }, [session])
 
   const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    contact.company.toLowerCase().includes(searchQuery.toLowerCase())
+    `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.company?.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   return (
@@ -86,40 +78,71 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      {/* Contacts Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredContacts.map((contact) => (
-          <Card key={contact.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-lg">
-                  {contact.avatar}
-                </div>
-                <div className="flex-1">
-                  <CardTitle className="text-lg mb-1">{contact.name}</CardTitle>
-                  <p className="text-sm text-gray-600">{contact.position}</p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <Building className="w-4 h-4 text-gray-400" />
-                <span>{contact.company}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
-                  {contact.email}
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <span>{contact.phone}</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Loading State */}
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500">Loading contacts...</p>
+        </div>
+      ) : filteredContacts.length > 0 ? (
+        /* Contacts Grid */
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredContacts.map((contact) => {
+            const initials = `${contact.firstName.charAt(0)}${contact.lastName.charAt(0)}`
+            const fullName = `${contact.firstName} ${contact.lastName}`
+            
+            return (
+              <Card key={contact.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold text-lg">
+                      {initials}
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg mb-1">{fullName}</CardTitle>
+                      <p className="text-sm text-gray-600">{contact.position || 'No position'}</p>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {contact.company && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Building className="w-4 h-4 text-gray-400" />
+                      <span>{contact.company.name}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <a href={`mailto:${contact.email}`} className="text-blue-600 hover:underline">
+                      {contact.email}
+                    </a>
+                  </div>
+                  {contact.phone && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{contact.phone}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      ) : (
+        /* Empty State */
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Building className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-semibold mb-2">No contacts yet</h3>
+            <p className="text-gray-600 mb-4">
+              {searchQuery ? 'No contacts match your search' : 'Add your first contact to get started'}
+            </p>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Contact
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

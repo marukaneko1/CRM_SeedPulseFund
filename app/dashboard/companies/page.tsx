@@ -1,12 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Building, Search, Plus, TrendingUp, MapPin, Users, DollarSign } from "lucide-react"
 
-// Demo companies only for admin
+interface Company {
+  id: string
+  name: string
+  website?: string
+  industry?: string
+  stage?: string
+  description?: string
+  foundedYear?: number
+  teamSize?: number
+  location?: string
+  _count?: {
+    contacts: number
+    deals: number
+  }
+}
+
+// Demo companies only for admin (fallback)
 const demoCompanies = [
   {
     id: 1,
@@ -64,16 +80,35 @@ const demoCompanies = [
 
 export default function CompaniesPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
-  
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStage, setFilterStage] = useState("all")
-  
-  const companies = isAdmin ? demoCompanies : []
+
+  // Fetch companies from API
+  useEffect(() => {
+    async function fetchCompanies() {
+      try {
+        const response = await fetch('/api/companies')
+        if (response.ok) {
+          const data = await response.json()
+          setCompanies(data)
+        }
+      } catch (error) {
+        console.error('Error fetching companies:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session) {
+      fetchCompanies()
+    }
+  }, [session])
 
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.industry.toLowerCase().includes(searchTerm.toLowerCase())
+                         company.industry?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStage = filterStage === "all" || company.stage === filterStage
     return matchesSearch && matchesStage
   })
