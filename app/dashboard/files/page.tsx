@@ -216,7 +216,7 @@ export default function FilesPage() {
                 <span className="text-xs text-gray-500">{files.length}</span>
               </button>
               
-              {isAdmin && folders.map((folder) => (
+              {folders.map((folder) => (
                 <button
                   key={folder.name}
                   onClick={() => setSelectedFolder(folder.name)}
