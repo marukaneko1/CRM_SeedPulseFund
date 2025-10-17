@@ -18,12 +18,12 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
+  Globe,
   Plus,
   Search,
   FileText,
   TrendingUp,
   Target,
-  Globe,
   Star,
   ChevronDown,
   LogOut,
@@ -35,6 +35,9 @@ import {
   Network,
   ClipboardCheck,
   PieChart,
+  Lightbulb,
+  Sparkles,
+  GitBranch,
 } from "lucide-react"
 
 // Helper to get dynamic badge counts based on user
@@ -60,10 +63,20 @@ const getDynamicNavigation = (isAdmin: boolean) => [
   
   { type: "separator" },
   { type: "section", name: "OPERATIONS" },
+  { name: "Ideas", href: "/dashboard/ideas", icon: Lightbulb },
+  { name: "Visual Boards", href: "/dashboard/visual-board", icon: GitBranch },
   { name: "Accounting", href: "/dashboard/accounting", icon: Calculator },
   { name: "Legal", href: "/dashboard/legal", icon: Scale },
   { name: "Networking", href: "/dashboard/networking", icon: Network },
   { name: "Surveys", href: "/dashboard/surveys", icon: ClipboardCheck },
+  
+  { type: "separator" },
+  { type: "section", name: "TAX & COMPLIANCE" },
+  { name: "Tax Management", href: "/dashboard/tax-management", icon: Calculator },
+  
+  { type: "separator" },
+  { type: "section", name: "GOOGLE WORKSPACE" },
+  { name: "Google Workspace", href: "/dashboard/google-workspace", icon: Globe },
   
   { type: "separator" },
   { type: "section", name: "INVESTOR RELATIONS" },
@@ -90,22 +103,8 @@ const getDynamicNavigation = (isAdmin: boolean) => [
   { name: "Fund Pipeline", href: "/dashboard/fund-pipeline", icon: Briefcase },
   { name: "GV Ventures", href: "/dashboard/gv-ventures", icon: Star },
   { name: "M&A Pipeline", href: "/dashboard/ma-pipeline", icon: TrendingUp },
-  { name: "Master Accelerator/Incubat...", href: "/dashboard/accelerator", icon: Target },
-  { name: "Master Corp Dev Pipeline", href: "/dashboard/corp-dev", icon: Building },
+  { name: "Master Accelerator", href: "/dashboard/accelerator", icon: Target },
   { name: "Master Dealflow Pipeline", href: "/dashboard/deals", icon: Briefcase },
-  { name: "Master Fund Performance T...", href: "/dashboard/fund-performance", icon: BarChart3 },
-  { name: "Master Intermediary Tracker", href: "/dashboard/intermediary", icon: Globe },
-  { name: "Master Investor Network/Ec...", href: "/dashboard/investor-network", icon: Users },
-  { name: "Master Key Relationships", href: "/dashboard/relationships", icon: Star },
-  { name: "Master Limited Partner Trac...", href: "/dashboard/lp-tracker", icon: Users },
-  { name: "Master LP Contacts", href: "/dashboard/lp-contacts", icon: Users },
-  { name: "Master Newsletter", href: "/dashboard/newsletter", icon: Mail },
-  { name: "Master Portfolio Companies", href: "/dashboard/portfolio", icon: Building },
-  { name: "Master Real Estate Investme...", href: "/dashboard/real-estate", icon: Building },
-  { name: "Master Talent Network", href: "/dashboard/talent", icon: Users },
-  { name: "PE & Banker Contacts", href: "/dashboard/pe-bankers", icon: Users },
-  { name: "Private Equity Pipeline", href: "/dashboard/pe-pipeline", icon: Briefcase },
-  { name: "Project/Engagement Executi...", href: "/dashboard/projects", icon: FileText },
   
   // Separator
   { type: "separator" },
@@ -126,6 +125,7 @@ export default function DashboardLayout({
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
+  const [currentTime, setCurrentTime] = useState(new Date())
   
   // Get dynamic navigation with correct badge counts
   const navigation = getDynamicNavigation(isAdmin)
@@ -142,6 +142,15 @@ export default function DashboardLayout({
   const handleSignOut = async () => {
     await signOut({ callbackUrl: "/auth/login" })
   }
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000) // Update every minute
+
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     // Check if user should see onboarding - only for non-admin users
@@ -334,6 +343,35 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header Bar */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-end gap-4">
+          {/* Date and Time */}
+          <div className="text-sm text-gray-600">
+            {currentTime.toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              month: 'short', 
+              day: 'numeric',
+              year: 'numeric'
+            })}
+            {' • '}
+            {currentTime.toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            })}
+          </div>
+
+          {/* AI Assistant Button */}
+          <Link
+            href="/dashboard/deal-assist"
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-lg transition-all duration-200 border border-gray-200 hover:border-blue-300 hover:shadow-sm group"
+            title="AI Deal Assistant"
+          >
+            <Sparkles className="w-4 h-4 text-blue-600 group-hover:text-purple-600 transition-colors" />
+            <span className="text-gray-700 group-hover:text-gray-900">AI Assistant</span>
+          </Link>
+        </div>
+
         {children}
       </div>
     </div>

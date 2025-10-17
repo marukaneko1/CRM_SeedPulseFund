@@ -134,7 +134,7 @@ export default function SurveysPage() {
         <div className="space-y-4">
           {surveys.map((survey) => (
             <Card key={survey.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
+              <CardContent className="p-6 overflow-y-auto max-h-screen">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">

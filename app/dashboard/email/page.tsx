@@ -48,6 +48,8 @@ export default function EmailPage() {
   const [syncing, setSyncing] = useState(false)
   const [autoSync, setAutoSync] = useState(true)
   const [realEmails, setRealEmails] = useState<any[]>([])
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
   
   const emails = gmailConnected ? realEmails : (isAdmin ? demoEmails : [])
   
@@ -55,6 +57,7 @@ export default function EmailPage() {
     { id: "inbox", name: "Inbox", icon: Inbox, count: emails.filter(e => !e.read).length },
     { id: "sent", name: "Sent", icon: Send, count: 0 },
     { id: "starred", name: "Starred", icon: Star, count: emails.filter(e => e.starred).length },
+    { id: "spam", name: "Spam", icon: Archive, count: 0 },
     { id: "archive", name: "Archive", icon: Archive, count: 0 },
   ]
   
@@ -73,9 +76,31 @@ export default function EmailPage() {
     return () => clearInterval(interval)
   }, [gmailConnected, autoSync])
   
-  // Check Gmail connection status on load
+  // Check Gmail connection status on load and handle URL parameters
   useEffect(() => {
     checkGmailConnection()
+    
+    // Check URL parameters for OAuth callback results
+    const urlParams = new URLSearchParams(window.location.search)
+    const success = urlParams.get('success')
+    const error = urlParams.get('error')
+    
+    if (success === 'gmail_connected') {
+      // Gmail connection successful
+      setGmailConnected(true)
+      setGmailAddress('Connected Gmail Account') // We'll get the real email after first sync
+      syncGmailEmails()
+      
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard/email')
+    } else if (error) {
+      // Gmail connection failed
+      console.error('Gmail connection error:', error)
+      alert('Gmail connection failed. Please try again.')
+      
+      // Clean URL
+      window.history.replaceState({}, '', '/dashboard/email')
+    }
   }, [])
   
   const checkGmailConnection = async () => {
@@ -101,6 +126,10 @@ export default function EmailPage() {
       if (response.ok) {
         const { url } = await response.json()
         window.location.href = url
+      } else {
+        const errorData = await response.json()
+        console.error('Gmail auth URL error:', errorData)
+        alert(`Failed to connect Gmail: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error connecting Gmail:', error)
@@ -122,24 +151,56 @@ export default function EmailPage() {
     }
   }
   
-  const syncGmailEmails = async () => {
+  const syncGmailEmails = async (folder: string = selectedFolder.id, reset: boolean = true) => {
     setSyncing(true)
     try {
-      const response = await fetch('/api/email/gmail/sync', { method: 'POST' })
+      const response = await fetch('/api/email/gmail/sync', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder, pageToken: null }) // Reset to first page
+      })
       if (response.ok) {
         const data = await response.json()
         setRealEmails(data.emails || [])
+        setNextPageToken(data.nextPageToken || null)
         
-        // Show notification if new unread emails
-        const newUnread = data.emails?.filter((e: any) => !e.read).length || 0
-        if (newUnread > 0) {
-          showEmailNotification(newUnread)
+        // Show notification if new unread emails (only for inbox)
+        if (folder === 'inbox') {
+          const newUnread = data.emails?.filter((e: any) => !e.read).length || 0
+          if (newUnread > 0) {
+            showEmailNotification(newUnread)
+          }
         }
       }
     } catch (error) {
       console.error('Error syncing Gmail:', error)
     } finally {
       setSyncing(false)
+    }
+  }
+
+  const loadMoreEmails = async () => {
+    if (!nextPageToken || loadingMore) return
+    
+    setLoadingMore(true)
+    try {
+      const response = await fetch('/api/email/gmail/sync', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          folder: selectedFolder.id,
+          pageToken: nextPageToken
+        })
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setRealEmails(prev => [...prev, ...(data.emails || [])])
+        setNextPageToken(data.nextPageToken || null)
+      }
+    } catch (error) {
+      console.error('Error loading more emails:', error)
+    } finally {
+      setLoadingMore(false)
     }
   }
   
@@ -164,6 +225,13 @@ export default function EmailPage() {
     syncGmailEmails() // Refresh to show sent email
   }
 
+  const handleFolderSelect = async (folder: any) => {
+    setSelectedFolder(folder)
+    if (gmailConnected) {
+      await syncGmailEmails(folder.id)
+    }
+  }
+
   return (
     <div className="h-screen flex">
       {/* Sidebar */}
@@ -177,7 +245,7 @@ export default function EmailPage() {
             {folders.map((folder) => (
               <button
                 key={folder.id}
-                onClick={() => setSelectedFolder(folder)}
+                onClick={() => handleFolderSelect(folder)}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded flex items-center justify-between transition-colors",
                   selectedFolder.id === folder.id
@@ -268,7 +336,7 @@ export default function EmailPage() {
       </div>
 
       {/* Email List */}
-      <div className="w-96 bg-white border-r">
+      <div className="w-96 bg-white border-r overflow-y-auto">
         <div className="p-4 border-b">
           <h2 className="font-semibold text-lg">{selectedFolder.name}</h2>
         </div>
@@ -299,11 +367,32 @@ export default function EmailPage() {
               <p className="text-sm text-gray-600 line-clamp-2">{email.preview}</p>
             </div>
           ))}
+          
+          {/* Load More Button */}
+          {gmailConnected && nextPageToken && (
+            <div className="p-4 border-t border-gray-200">
+              <Button
+                onClick={loadMoreEmails}
+                disabled={loadingMore}
+                variant="outline"
+                className="w-full"
+              >
+                {loadingMore ? (
+                  <span className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Loading more emails...
+                  </span>
+                ) : (
+                  <span>Load More Emails</span>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Email Content */}
-      <div className="flex-1 bg-white">
+      <div className="flex-1 bg-white overflow-y-auto">
         <div className="flex items-center justify-center h-full text-gray-400">
           <div className="text-center">
             <Mail className="w-16 h-16 mx-auto mb-4" />
@@ -312,7 +401,7 @@ export default function EmailPage() {
               <div className="max-w-md mx-auto">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-800 text-sm">
                   <p className="font-semibold mb-2">Connect your Gmail to get started</p>
-                  <p>Send and receive emails directly through the CRM. Click "Connect Gmail" in the sidebar.</p>
+                  <p>Send and receive emails directly through the CRM. Click &quot;Connect Gmail&quot; in the sidebar.</p>
                 </div>
               </div>
             )}

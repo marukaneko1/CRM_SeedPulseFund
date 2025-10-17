@@ -1,448 +1,235 @@
-# 🚀 Enterprise VC CRM - SeedPulse Fund
+# 🚀 CRM SeedPulse Fund
 
-**A complete, production-ready venture capital CRM system with AI-powered intelligence**
+**All-in-One CRM Platform for Venture Studios and VCs**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com)
-[![Status](https://img.shields.io/badge/status-production--ready-success.svg)](https://github.com)
-[![Completion](https://img.shields.io/badge/completion-95%25-brightgreen.svg)](https://github.com)
+A comprehensive Customer Relationship Management system built with Next.js, featuring AI-powered deal assistance, Google Workspace integration, visual boards, and much more.
 
----
-
-## 📋 Overview
-
-SeedPulse CRM is an enterprise-grade customer relationship management system built specifically for venture capital firms. It provides a complete suite of tools for managing deal flow, investor relations, portfolio companies, and team collaboration.
-
-### Key Features
-
-- 🎯 **Complete CRM** - Contacts, companies, deals, tasks, calendar
-- 💬 **Real-time Messaging** - Team chat, DMs, voice, polls, events
-- 📧 **Gmail Integration** - Send/receive emails, auto-sync, notifications
-- 🤖 **AI Co-pilot** - Deal analysis, DD checklists, memo generation
-- 📊 **Analytics** - Comprehensive reporting and fund metrics
-- 🔒 **Data Rooms** - Secure document sharing with permissions
-- 💰 **LP Portal** - Investor relations and performance tracking
-- ✍️ **Digital Signing** - E-signature workflows (DocuSign/Dropbox Sign)
-- 📈 **Business Ops** - Accounting, legal, networking, surveys
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/marukaneko1/CRM_SeedPulseFund)
 
 ---
 
-## 🏗️ Tech Stack
+## ✨ **Features**
 
-**Frontend:**
-- Next.js 14 (App Router)
-- React 18
-- TypeScript
-- Tailwind CSS
-- Radix UI Components
+### 🎯 **Core CRM Features**
+- 📊 **Dashboard** - Real-time overview of deals, tasks, and activities
+- 🤝 **Deals Management** - Track investment pipeline with stages
+- 👥 **Contacts** - Manage relationships with founders and investors
+- 🏢 **Portfolio Companies** - Monitor invested companies
+- 📋 **Tasks & Reminders** - Never miss a follow-up with alarm notifications
+- 📁 **File Management** - Centralized document storage
+- ✍️ **Digital Signing** - E-signature workflow
+- 📝 **Surveys** - Founder and investor questionnaires
+- 💡 **Ideas Board** - Capture and evaluate startup ideas
 
-**Backend:**
-- Next.js API Routes
-- Prisma ORM
-- PostgreSQL Database
-- NextAuth.js (Authentication)
+### 🤖 **AI-Powered Features**
+- 💬 **AI Deal Assistant** - Context-aware chatbot with full CRM data access
+- 📊 **Tax Analysis** - AI-powered tax form analysis
+- 🧠 **Smart Context** - AI understands your deals, contacts, emails, calendar, and files
 
-**AI & Services:**
-- OpenAI GPT-4o / Anthropic Claude
-- Vercel AI SDK
-- Gmail API (email integration)
-- Google Calendar / Calendly (optional)
-- DocuSign / Dropbox Sign (optional)
+### 🎨 **Visual Boards (Miro-like)**
+- 🖼️ **Interactive Canvas** - Drag-and-drop visual workspace
+- 🏢 **Org Charts** - Create company organizational structures
+- 🌳 **Company Trees** - Visualize company hierarchies
+- ✏️ **Drawing Tools** - Text boxes, sticky notes, shapes (squares, circles, triangles, arrows)
+- 📐 **Templates** - Pre-built org chart and company tree templates
+- 🔧 **Draggable UI** - Move toolbars and panels anywhere
+- 🖥️ **Fullscreen Mode** - Immersive visual board experience
+- 💾 **Save & Export** - Save boards locally or export as JSON
+
+### 🔗 **Google Workspace Integration**
+- 📧 **Gmail Sync** - Read emails, folder management, real-time sync
+- 📅 **Google Calendar** - Sync events and meetings
+- 🔐 **OAuth 2.0** - Secure Google authentication
+
+### 🔔 **Smart Notifications**
+- ⏰ **Reminder Alarms** - Audio alerts for upcoming tasks
+- 🔊 **Sound Notifications** - Customizable alert sounds
+- ⏸️ **Snooze & Dismiss** - Flexible reminder management
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ **Tech Stack**
 
-### Prerequisites
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Database:** Prisma ORM (SQLite dev, PostgreSQL prod)
+- **Authentication:** NextAuth.js
+- **UI Components:** Shadcn/ui + Tailwind CSS
+- **AI:** OpenAI GPT-4
+- **Visual Boards:** ReactFlow
+- **Email/Calendar:** Google APIs
+- **Deployment:** Vercel
 
-- Node.js 18+ 
-- PostgreSQL database
-- OpenAI API key (optional, for AI features)
+---
 
-### Installation
+## 📦 **Installation**
+
+### **Prerequisites**
+- Node.js 18+
+- npm or yarn
+- Git
+
+### **1. Clone Repository**
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/CRM_SeedPulseFund.git
+git clone https://github.com/marukaneko1/CRM_SeedPulseFund.git
 cd CRM_SeedPulseFund
+```
 
-# Install dependencies
+### **2. Install Dependencies**
+
+```bash
 npm install
+```
 
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your configuration
+### **3. Environment Variables**
 
-# Run database migrations
-npx prisma migrate dev
+Create `.env.local` in the root directory:
+
+```env
+# Database
+DATABASE_URL="file:./dev.db"
+
+# NextAuth
+NEXTAUTH_SECRET="your-secret-here"
+NEXTAUTH_URL="http://localhost:3000"
+
+# OpenAI
+OPENAI_API_KEY="sk-your-key-here"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-client-secret"
+GOOGLE_REDIRECT_URI="http://localhost:3000/api/email/gmail/callback"
+```
+
+### **4. Setup Database**
+
+```bash
+# Generate Prisma Client
+npm run db:generate
+
+# Push schema to database
+npm run db:push
 
 # Seed initial data (optional)
-npm run seed
+npm run db:seed
+```
 
-# Start development server
+### **5. Run Development Server**
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000)
 
-### Default Credentials
-
-```
-Admin: admin@demo.com / password123
-User: user@demo.com / password123
-```
+**Default Login:**
+- Email: `admin@demo.com`
+- Password: `admin123`
 
 ---
 
-## ⚙️ Configuration
+## 🚀 **Deployment**
 
-### Environment Variables
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed instructions.
 
-Create a `.env.local` file with the following:
+### **Quick Deploy to Vercel:**
 
-```bash
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/vc_crm"
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Ready for deployment"
+   git push origin main
+   ```
 
-# Authentication
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
+2. **Deploy on Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Add environment variables
+   - Deploy!
 
-# AI Features (Optional)
-OPENAI_API_KEY="sk-your-api-key"
-AI_PROVIDER="openai" # or "anthropic"
-
-# Gmail Integration (Optional)
-GMAIL_CLIENT_ID="your-client-id.apps.googleusercontent.com"
-GMAIL_CLIENT_SECRET="your-client-secret"
-GMAIL_REDIRECT_URI="http://localhost:3000/api/email/gmail/callback"
-
-# E-Signature (Optional)
-DOCUSIGN_ACCOUNT_ID=""
-DOCUSIGN_INTEGRATION_KEY=""
-DOCUSIGN_RSA_PRIVATE_KEY=""
-
-DROPBOX_SIGN_API_KEY=""
-
-# File Storage (Optional - for production)
-AWS_ACCESS_KEY_ID=""
-AWS_SECRET_ACCESS_KEY=""
-AWS_S3_BUCKET=""
-```
-
-### Generate Secrets
-
-```bash
-# Generate NEXTAUTH_SECRET
-openssl rand -base64 32
-```
+3. **Setup Production Database**
+   - Use Neon, Supabase, or Vercel Postgres
+   - Update `DATABASE_URL` in Vercel environment variables
 
 ---
 
-## 📚 Features Documentation
+## 📖 **Documentation**
 
-### Core CRM
-
-**Deal Flow Management:**
-- Pipeline visualization with drag-and-drop
-- Custom stages and workflows
-- Deal tracking and history
-- Task assignment and reminders
-
-**Contact & Company Management:**
-- Comprehensive contact database
-- Company profiles with relationships
-- LinkedIn/Twitter integration
-- Tags and custom fields
-
-**Calendar & Tasks:**
-- Integrated calendar system
-- Task management with priorities
-- Reminders and notifications
-- Event scheduling
-
-### Collaboration Tools
-
-**Team Messaging:**
-- Channel-based team communication
-- Direct 1-on-1 messaging
-- Voice message recording & playback
-- Interactive polls and events
-- File sharing and attachments
-- Real-time updates (2s polling)
-- Typing indicators
-
-**File Management:**
-- Centralized file storage
-- Upload and organization
-- Search and filtering
-- Preview support
-
-**Email Integration:**
-- Gmail OAuth 2.0 connection
-- Send emails through your Gmail account
-- Receive and sync emails automatically
-- Auto-sync every 60 seconds (configurable)
-- Desktop notifications for new emails
-- Email organization (inbox, sent, starred, archive)
-- Full email compose interface with CC/BCC
-- Real-time email updates
-
-### AI Intelligence
-
-**AI Deal Assistant:**
-- Chat interface for deal analysis
-- Investment opportunity evaluation
-- Market research assistance
-- Financial modeling help
-- Due diligence guidance
-
-**AI Actions:**
-- Objection reply generator
-- DD checklist builder
-- Investment memo creator
-- Email drafting assistant
-- Context-aware suggestions
-
-**AI Features:**
-- Multi-provider support (OpenAI/Anthropic)
-- Intelligent error handling
-- Quota management
-- Usage tracking and cost monitoring
-- Document grounding (RAG)
-
-### Investor Relations
-
-**LP Portal:**
-- Performance dashboard (NAV, IRR, TVPI, DPI)
-- Portfolio company tracking
-- Document repository
-- Capital call management
-- Distribution tracking
-
-**Reporting:**
-- Fund metrics and KPIs
-- Portfolio performance analytics
-- Custom date ranges
-- Export capabilities (CSV/PDF)
-
-### Business Operations
-
-**Accounting:**
-- Cash position tracking
-- Capital calls and distributions
-- Expense management
-- Transaction history
-- P&L overview
-
-**Legal:**
-- Document template library
-- Clause repository
-- Template management
-- Usage tracking
-
-**Networking:**
-- Network group management
-- Introduction workflow
-- Activity monitoring
-- Relationship tracking
-
-**Surveys:**
-- Survey builder
-- Distribution management
-- Response tracking
-- Analytics dashboard
-
-**Fundraising:**
-- LP pipeline management
-- Commitment tracking
-- Fund progress monitoring
-
-### Data & Documents
-
-**Data Rooms:**
-- Secure document storage
-- Granular permissions (Admin/Contributor/Viewer)
-- Share links with expiration
-- Audit logging
-- Version control
-
-**Digital Signing:**
-- E-signature workflow management
-- DocuSign integration (when configured)
-- Dropbox Sign integration (when configured)
-- Web signature fallback (draw/type)
-- Status tracking
+- [Deployment Guide](./DEPLOYMENT_GUIDE.md) - Deploy to Vercel and GitHub
+- [Visual Board Guide](./VISUAL_BOARD_CLEAN_REWRITE.md) - Visual boards features
+- [Google Workspace Setup](./GOOGLE_WORKSPACE_SETUP_COMPLETE.md) - Gmail & Calendar integration
+- [AI Features](./AI_DATA_ACCESS_COMPLETE.md) - AI assistant capabilities
+- [Reminder System](./REMINDER_ALARM_COMPLETE.md) - Alarm notifications
 
 ---
 
-## 🔐 Security
+## 🎨 **Visual Boards Features**
+
+The Visual Boards section provides a Miro-like interactive canvas:
+
+- **Node Types:** Companies, People, Departments, Connections
+- **Drawing Tools:** Text boxes, sticky notes
+- **Shapes:** Squares, circles, triangles, arrows
+- **Templates:** Pre-built org charts and company trees
+- **Draggable UI:** Move toolbars and panels
+- **Fullscreen Mode:** Immersive workspace
+- **Export:** Save as JSON
+
+---
+
+## 🔐 **Security**
 
 - ✅ NextAuth.js authentication
-- ✅ JWT session management
-- ✅ API route protection
-- ✅ Input validation and sanitization
-- ✅ XSS protection
-- ✅ CSRF protection
-- ✅ Secure file upload validation
-- ✅ Role-based access control
+- ✅ Environment variables for secrets
+- ✅ Server-side API routes
+- ✅ OAuth 2.0 for Google integration
+- ✅ Secure session management
 
 ---
 
-## 📊 Project Status
+## 🤝 **Contributing**
 
-**Completion: 95%** ✅
-
-| Module | Status |
-|--------|--------|
-| Core CRM | ✅ 100% |
-| Messaging | ✅ 100% |
-| Gmail Integration | ✅ 100% |
-| AI Features | ✅ 100% |
-| Data Rooms | ✅ 95% |
-| LP Portal | ✅ 100% |
-| Reporting | ✅ 100% |
-| Accounting | ✅ 100% |
-| Legal | ✅ 100% |
-| Networking | ✅ 100% |
-| Surveys | ✅ 100% |
-| Fundraising | ✅ 100% |
-| Digital Signing | ✅ 95% |
-
-**Total:** 48+ API endpoints, 40+ pages, 60,000+ lines of code
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
-## 🚀 Deployment
+## 📝 **License**
 
-### Vercel (Recommended)
-
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Login
-vercel login
-
-# Deploy
-vercel --prod
-```
-
-### Environment Variables in Vercel
-
-Add all variables from `.env.local` to Vercel:
-1. Go to Project Settings → Environment Variables
-2. Add each variable
-3. Redeploy
-
-### Database Setup
-
-```bash
-# Production database migration
-npx prisma migrate deploy
-
-# Generate Prisma Client
-npx prisma generate
-```
+This project is private and proprietary.
 
 ---
 
-## 📖 Documentation
+## 🙏 **Acknowledgments**
 
-- **[Production Deployment Guide](PRODUCTION_DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
-- **[Project Summary](PROJECT_SUMMARY.md)** - Comprehensive feature overview
-- **[QA Test Checklist](QA_TEST_CHECKLIST.md)** - Testing procedures
-- **[Gmail Integration Setup](GMAIL_INTEGRATION_SETUP.md)** - Detailed Gmail setup guide
-- **[Gmail Quick Start](GMAIL_QUICK_START.md)** - 5-minute Gmail setup
-- **[Gmail Features](GMAIL_FEATURES.md)** - Complete Gmail features guide
+- Built with [Next.js](https://nextjs.org/)
+- UI components from [Shadcn/ui](https://ui.shadcn.com/)
+- Visual boards powered by [ReactFlow](https://reactflow.dev/)
+- AI by [OpenAI](https://openai.com/)
 
 ---
 
-## 🤝 Contributing
+## 📧 **Contact**
 
-This is a proprietary project for SeedPulse Fund. For internal development:
-
-1. Create feature branch
-2. Make changes
-3. Test thoroughly
-4. Submit PR for review
+For questions or support, please open an issue on GitHub.
 
 ---
 
-## 📝 License
+## 🎯 **Roadmap**
 
-Proprietary - SeedPulse Fund © 2025
-
----
-
-## 🆘 Support
-
-### Common Issues
-
-**AI Features Not Working:**
-- Ensure OPENAI_API_KEY is set
-- Verify billing is configured at platform.openai.com
-- Check usage limits
-
-**Database Errors:**
-- Verify DATABASE_URL format
-- Run `npx prisma migrate dev`
-- Check database is accessible
-
-**Login Issues:**
-- Clear browser cookies
-- Verify NEXTAUTH_SECRET is set
-- Check NEXTAUTH_URL matches deployment
-
-**Gmail Integration Issues:**
-- Verify GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET are set
-- Check redirect URI matches Google Cloud Console
-- Enable Gmail API in Google Cloud Console
-- See [Gmail Quick Start](GMAIL_QUICK_START.md) for setup
-
-### Getting Help
-
-- 📚 Check documentation files
-- 🔍 Review error logs
-- 💬 Contact development team
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Integration with more email providers
+- [ ] Custom visual board templates
+- [ ] AI-powered deal scoring
+- [ ] Slack integration
+- [ ] Advanced tax management features
 
 ---
 
-## 🎯 Roadmap
-
-### Current Version (1.0.0)
-- ✅ All core features complete
-- ✅ 95% feature completion
-- ✅ Production ready
-
-### Future Enhancements (Optional)
-- ✅ Gmail Integration (Completed!)
-- 🔄 Real WebSocket implementation
-- 🔄 Mobile app (React Native)
-- 🔄 Advanced analytics with ML
-- 🔄 Additional integrations (Slack, Zoom, etc.)
-- 🔄 White-label capabilities
-
----
-
-## 🏆 Credits
-
-**Development Team:** AI-Assisted Development  
-**Technology Stack:** Next.js, React, TypeScript, OpenAI  
-**Design System:** Tailwind CSS, Radix UI
-
----
-
-## 📞 Contact
-
-For questions or support:
-- **Email:** support@seedpulse.fund
-- **Documentation:** See docs folder
-- **Issues:** Internal ticket system
-
----
-
-**Built with ❤️ for Modern Venture Capital**
-
-Last Updated: October 15, 2025  
-Version: 1.0.0  
-Status: Production Ready 🚀
+**Built with ❤️ for Venture Studios and VCs**

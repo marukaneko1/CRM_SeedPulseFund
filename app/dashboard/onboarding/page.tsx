@@ -77,7 +77,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         {/* Header with Skip Button */}
         <div className="flex items-center justify-between mb-8">

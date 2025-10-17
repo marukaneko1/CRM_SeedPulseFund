@@ -16,8 +16,7 @@ async function testOpenAIKey() {
     // Try with gpt-4o-mini first (available on all accounts)
     const { text } = await generateText({
       model: openai('gpt-4o-mini'),
-      prompt: 'Say "API key is working!" in a single sentence.',
-      maxTokens: 50,
+      prompt: 'Say "API key is working!" in a single sentence.'
     })
 
     console.log('✅ SUCCESS! OpenAI API is working!')
@@ -31,7 +30,6 @@ async function testOpenAIKey() {
       await generateText({
         model: openai('gpt-4'),
         prompt: 'Test',
-        maxTokens: 10,
       })
       console.log('✅ GPT-4 access confirmed!')
     } catch {

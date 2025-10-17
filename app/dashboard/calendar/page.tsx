@@ -170,10 +170,10 @@ export default function CalendarPage() {
   const hasEvents = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0]
     // Check both own events and team events
-    const hasOwnEvents = events.some(e => e.startTime.split('T')[0] === dateStr)
+    const hasOwnEvents = events.some(e => getEventDateString(e) === dateStr)
     const hasTeamEvents = selectedUsers.length > 0 && teamEvents.some(userCal => 
       selectedUsers.includes(userCal.userId) && 
-      userCal.events.some(e => e.startTime.split('T')[0] === dateStr)
+      userCal.events.some(e => getEventDateString(e) === dateStr)
     )
     return hasOwnEvents || hasTeamEvents
   }
@@ -182,6 +182,23 @@ export default function CalendarPage() {
   useEffect(() => {
     async function fetchEvents() {
       try {
+        // First check if Google Calendar is connected
+        const googleResponse = await fetch('/api/calendar/google')
+        if (googleResponse.ok) {
+          const googleData = await googleResponse.json()
+          
+          if (googleData.connected && googleData.events && googleData.events.length > 0) {
+            console.log(`📅 Loaded ${googleData.events.length} events from Google Calendar`)
+            setEvents(googleData.events)
+            setGoogleConnected(true)
+            setLoading(false)
+            return // Use Google Calendar events if available
+          } else {
+            setGoogleConnected(false)
+          }
+        }
+        
+        // Fallback to local calendar events if Google Calendar not connected
         const response = await fetch('/api/calendar')
         if (response.ok) {
           const data = await response.json()
@@ -207,6 +224,35 @@ export default function CalendarPage() {
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Helper function to safely get event date string
+  const getEventDateString = (event: any): string => {
+    const eventDate = event.startTime || event.date || event.start
+    if (!eventDate) return ''
+    
+    try {
+      if (typeof eventDate === 'string') {
+        return eventDate.split('T')[0]
+      }
+      return new Date(eventDate).toISOString().split('T')[0]
+    } catch (error) {
+      console.error('Error parsing event date:', error, event)
+      return ''
+    }
+  }
+
+  // Helper function to safely get event Date object
+  const getEventDate = (event: any): Date | null => {
+    const eventDate = event.startTime || event.date || event.start
+    if (!eventDate) return null
+    
+    try {
+      return new Date(eventDate)
+    } catch (error) {
+      console.error('Error parsing event date:', error, event)
+      return null
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -239,6 +285,15 @@ export default function CalendarPage() {
   }
   
   const displayEvents = getCombinedEvents()
+  
+  // Get events for a specific date and hour
+  const getEventsForTimeSlot = (date: string, hour: number) => {
+    return displayEvents.filter(e => {
+      const eventDate = getEventDate(e)
+      if (!eventDate) return false
+      return getEventDateString(e) === date && eventDate.getHours() === hour
+    })
+  }
   
   // Integration handlers
   const connectGoogleCalendar = async () => {
@@ -298,7 +353,24 @@ export default function CalendarPage() {
   const syncAllCalendars = async () => {
     setSyncing(true)
     try {
-      // Simulate sync from Google Calendar and Calendly
+      console.log('📅 Syncing calendars...')
+      
+      // Check if Google Calendar is connected and fetch real events
+      const googleResponse = await fetch('/api/calendar/google')
+      if (googleResponse.ok) {
+        const googleData = await googleResponse.json()
+        
+        if (googleData.connected && googleData.events) {
+          console.log(`📅 Synced ${googleData.events.length} events from Google Calendar`)
+          setEvents(googleData.events)
+          setGoogleConnected(true)
+          alert(`Synced successfully! ${googleData.events.length} events from Google Calendar.`)
+          setSyncing(false)
+          return
+        }
+      }
+      
+      // If Google Calendar not connected, try the old sync method (demo data)
       const response = await fetch('/api/calendar/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -311,7 +383,7 @@ export default function CalendarPage() {
       if (response.ok) {
         const data = await response.json()
         setEvents(data.events || events)
-        alert(`Synced successfully! ${data.count || 0} events imported.`)
+        alert(`Synced successfully! ${data.count || 0} events imported (demo data - connect Google Calendar for real events).`)
       }
     } catch (error) {
       console.error('Sync error:', error)
@@ -354,14 +426,6 @@ export default function CalendarPage() {
     } catch (error) {
       console.error('Error creating event:', error)
     }
-  }
-  
-  // Get events for a specific date and hour
-  const getEventsForTimeSlot = (date: string, hour: number) => {
-    return displayEvents.filter(e => {
-      const eventDate = new Date(e.startTime)
-      return e.startTime.split('T')[0] === date && eventDate.getHours() === hour
-    })
   }
 
   return (
@@ -488,7 +552,7 @@ export default function CalendarPage() {
               <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((date, index) => {
                   const dateStr = date.toISOString().split('T')[0]
-                  const dayEvents = displayEvents.filter(e => e.startTime.split('T')[0] === dateStr)
+                  const dayEvents = displayEvents.filter(e => getEventDateString(e) === dateStr)
                   
                   return (
                     <button
@@ -690,7 +754,8 @@ export default function CalendarPage() {
                 {Array.from({ length: 12 }, (_, monthIndex) => {
                   const monthDate = new Date(currentMonth.getFullYear(), monthIndex, 1)
                   const monthEvents = displayEvents.filter(e => {
-                    const eventDate = new Date(e.startTime)
+                    const eventDate = getEventDate(e)
+                    if (!eventDate) return false
                     return eventDate.getMonth() === monthIndex && eventDate.getFullYear() === currentMonth.getFullYear()
                   })
                   
@@ -810,7 +875,8 @@ export default function CalendarPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">This Week</span>
                   <span className="font-semibold">{displayEvents.filter(e => {
-                    const eventDate = new Date(e.startTime)
+                    const eventDate = getEventDate(e)
+                    if (!eventDate) return false
                     const today = new Date()
                     const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
                     return eventDate >= today && eventDate <= weekFromNow
@@ -819,7 +885,7 @@ export default function CalendarPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Today</span>
                   <span className="font-semibold">{displayEvents.filter(e => 
-                    e.startTime.split('T')[0] === new Date().toISOString().split('T')[0]
+                    getEventDateString(e) === new Date().toISOString().split('T')[0]
                   ).length}</span>
                 </div>
                 {isAdmin && selectedUsers.length > 0 && (
@@ -874,7 +940,12 @@ export default function CalendarPage() {
               <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((date, index) => {
                   const dateStr = date.toISOString().split('T')[0]
-                  const dayEvents = displayEvents.filter(e => e.startTime.split('T')[0] === dateStr)
+                  const dayEvents = displayEvents.filter(e => {
+                    const eventDate = e.startTime || e.date || e.start
+                    if (!eventDate) return false
+                    const eventDateStr = typeof eventDate === 'string' ? eventDate.split('T')[0] : new Date(eventDate).toISOString().split('T')[0]
+                    return eventDateStr === dateStr
+                  })
                   
                   return (
                     <button
@@ -935,7 +1006,7 @@ export default function CalendarPage() {
                   : 'All Events'}
               </CardTitle>
               <span className="text-sm text-gray-600">
-                {displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length} events
+                {displayEvents.filter(e => !selectedDate || getEventDateString(e) === selectedDate).length} events
                 {selectedUsers.length > 0 && (
                   <span className="ml-2 text-blue-600">
                     (including {selectedUsers.length} team member{selectedUsers.length > 1 ? 's' : ''})
@@ -949,9 +1020,9 @@ export default function CalendarPage() {
               <div className="text-center py-8">
                 <p className="text-gray-500">Loading events...</p>
               </div>
-            ) : displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).length > 0 ? (
+            ) : displayEvents.filter(e => !selectedDate || getEventDateString(e) === selectedDate).length > 0 ? (
               <div className="space-y-4">
-                {displayEvents.filter(e => !selectedDate || e.startTime.split('T')[0] === selectedDate).map((event: any) => (
+                {displayEvents.filter(e => !selectedDate || getEventDateString(e) === selectedDate).map((event: any) => (
                   <div
                     key={event.id}
                     className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${
@@ -1104,7 +1175,7 @@ export default function CalendarPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Team Calendars</CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">View and monitor all team members' calendars</p>
+                  <p className="text-sm text-gray-600 mt-1">View and monitor all team members&apos; calendars</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-2 text-sm">
@@ -1138,7 +1209,7 @@ export default function CalendarPage() {
               <CardContent>
                 {teamEvents.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">Click "Refresh Now" to load team calendars</p>
+                    <p className="text-gray-500">Click &quot;Refresh Now&quot; to load team calendars</p>
                   </div>
                 ) : (
                   <div className="space-y-6">

@@ -37,5 +37,15 @@ next-env.d.ts
 
 # prisma
 prisma/migrations
+prisma/dev.db
+prisma/dev.db-journal
+
+# Sensitive documentation files
+.env.local.backup
+*_FIX.md
+*_SETUP_COMPLETE.md
+COMPLETE_SUMMARY.md
+FINAL_STATUS_COMPLETE.md
+VERCEL_DEPLOYMENT_READY.md
 
 

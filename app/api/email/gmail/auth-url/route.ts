@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getGmailAuthUrl } from '@/lib/integrations/gmail'
+import { getGoogleWorkspaceAuthUrl } from '@/lib/integrations/google-workspace'
 
 /**
  * Get Gmail OAuth Authorization URL
@@ -20,7 +20,16 @@ export async function GET(request: NextRequest) {
         `${new URL(request.url).origin}/api/email/gmail/callback`
     }
 
-    const authUrl = getGmailAuthUrl(config)
+    // Check if credentials are configured
+    if (!config.clientId || !config.clientSecret) {
+      return NextResponse.json(
+        { error: 'Gmail credentials not configured. Check environment variables.' },
+        { status: 500 }
+      )
+    }
+
+    const authUrl = getGoogleWorkspaceAuthUrl(config)
+    console.log('Generated Gmail auth URL:', authUrl)
 
     return NextResponse.json({ url: authUrl })
 

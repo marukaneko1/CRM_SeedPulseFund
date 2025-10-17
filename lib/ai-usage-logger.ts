@@ -44,7 +44,11 @@ export interface AIMessage {
 /**
  * Pricing per 1M tokens (as of Oct 2024)
  */
-const PRICING = {
+const PRICING: {
+  [provider: string]: {
+    [model: string]: { input: number; output: number }
+  }
+} = {
   openai: {
     'gpt-4o': { input: 2.50, output: 10.00 },
     'gpt-4o-mini': { input: 0.150, output: 0.600 },
@@ -72,7 +76,13 @@ export function calculateCost(
     return 0
   }
 
-  const pricing = PRICING[provider]?.[model as keyof typeof PRICING[typeof provider]]
+  const providerPricing = PRICING[provider]
+  if (!providerPricing) {
+    console.warn(`No pricing found for provider: ${provider}. Using default pricing.`)
+    return ((inputTokens / 1000000) * 2.5) + ((outputTokens / 1000000) * 10)
+  }
+
+  const pricing = providerPricing[model]
   
   if (!pricing) {
     console.warn(`No pricing found for ${provider}/${model}. Using default pricing.`)

@@ -85,7 +85,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
-                  We're sorry for the inconvenience. You can try:
+                  We&apos;re sorry for the inconvenience. You can try:
                 </p>
                 <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
                   <li>Refreshing the page</li>

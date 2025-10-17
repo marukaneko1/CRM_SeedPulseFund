@@ -20,6 +20,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
+  // Google Workspace Integration
+  googleAccessToken   String?
+  googleRefreshToken  String?
+  googleProfile       String?
+  googleConnectedAt   DateTime?
+  
   // Relations
   deals         Deal[]
   contacts      Contact[]
@@ -32,11 +38,14 @@ model User {
   directChats2  DirectChat[] @relation("DirectChatUser2")
   pollVotes     PollVote[]
   eventAttendees EventAttendee[]
-  tasks         Task[]
+  createdTasks  Task[] @relation("TaskCreator")
   notifications Notification[]
   reminders     Reminder[]
   files         File[]
   aiChats       AIChat[]
+  ideas         Idea[]
+  ideaComments  IdeaComment[]
+  ideaVotes     IdeaVote[]
   
   @@map("users")
 }
@@ -110,6 +119,7 @@ model Deal {
   
   // Relations
   activities    Activity[]
+  tasks         Task[]
   
   @@map("deals")
 }
@@ -354,19 +364,16 @@ model Task {
   id          String    @id @default(cuid())
   title       String
   description String?
-  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status      String    @default("pending") // pending, in_progress, completed
+  priority    String    @default("medium") // low, medium, high
   dueDate     DateTime?
-  completed   Boolean   @default(false)
-  category    String?
   assignedTo  String?
-  userId      String
-  user        User      @relation(fields: [userId], references: [id])
+  createdBy   String
+  user        User      @relation("TaskCreator", fields: [createdBy], references: [id])
   dealId      String?
-  contactId   String?
-  companyId   String?
+  deal        Deal?     @relation(fields: [dealId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  completedAt DateTime?
   
   @@map("tasks")
 }
@@ -444,5 +451,53 @@ model AIMessage {
   createdAt DateTime  @default(now())
   
   @@map("ai_messages")
+}
+
+model Idea {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  category    String        @default("GENERAL") // GENERAL, PRODUCT, PROCESS, MARKETING, TECH
+  status      String        @default("NEW") // NEW, IN_PROGRESS, REVIEW, IMPLEMENTED, REJECTED, NEW_COMPANY
+  priority    String        @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  tags        String?       // Comma-separated tags
+  color       String        @default("YELLOW") // YELLOW, BLUE, GREEN, PINK, ORANGE, PURPLE
+  positionX   Float?        // For drag-and-drop positioning
+  positionY   Float?        // For drag-and-drop positioning
+  isPinned    Boolean       @default(false)
+  isArchived  Boolean       @default(false)
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    IdeaComment[]
+  votes       IdeaVote[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  @@map("ideas")
+}
+
+model IdeaComment {
+  id        String   @id @default(cuid())
+  content   String
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@map("idea_comments")
+}
+
+model IdeaVote {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // UP, DOWN
+  createdAt DateTime @default(now())
+  
+  @@unique([ideaId, userId])
+  @@map("idea_votes")
 }
 

@@ -72,7 +72,7 @@ export default function PortfolioPage() {
   const totalReturn = portfolioCompanies.length > 0 ? ((totalCurrentValue - totalInvestment) / totalInvestment) * 100 : 0
 
   return (
-    <div className="p-8">
+    <div className="p-8 overflow-y-auto max-h-screen">
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold mb-2">Portfolio</h1>

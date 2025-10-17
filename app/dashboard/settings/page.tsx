@@ -190,7 +190,7 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold mb-4">Billing & Subscription</h2>
-                    <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg mb-6">
+                    <div className="p-6 overflow-y-auto max-h-screen bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg mb-6">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-2xl font-bold text-gray-900">Enterprise Plan</h3>

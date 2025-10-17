@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Calendar as CalendarIcon, Clock, Plus, Check, Trash2, AlertCircle } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, Plus, Check, Trash2, AlertCircle, Bell, Settings } from "lucide-react"
 import { useSession } from "next-auth/react"
+import { useReminderAlarm } from "@/hooks/use-reminder-alarm"
+import { AlarmSettings } from "@/components/reminders/alarm-settings"
 
 interface Reminder {
   id: string
@@ -19,6 +21,7 @@ export default function RemindersPage() {
   const { data: session } = useSession()
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showAlarmSettings, setShowAlarmSettings] = useState(false)
   const [filter, setFilter] = useState<"all" | "active" | "completed">("active")
   const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
@@ -26,6 +29,17 @@ export default function RemindersPage() {
     description: '',
     reminderDate: '',
   })
+
+  // Initialize alarm system
+  const {
+    settings,
+    updateSettings,
+    isMonitoring,
+    notificationPermission,
+    requestNotificationPermission,
+    testAlarm,
+    isNotificationSupported
+  } = useReminderAlarm(reminders)
 
   useEffect(() => {
     fetchReminders()
@@ -132,12 +146,42 @@ export default function RemindersPage() {
             <p className="text-gray-600 mt-1">
               {activeCount} active • {completedCount} completed
             </p>
+            {isMonitoring && (
+              <div className="flex items-center gap-2 mt-2 text-sm text-green-600">
+                <Bell className="w-4 h-4" />
+                Alarm monitoring active
+              </div>
+            )}
           </div>
-          <Button onClick={() => setShowAddForm(!showAddForm)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Reminder
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={() => setShowAlarmSettings(!showAlarmSettings)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Alarm Settings
+            </Button>
+            <Button onClick={() => setShowAddForm(!showAddForm)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Reminder
+            </Button>
+          </div>
         </div>
+
+        {/* Alarm Settings Panel */}
+        {showAlarmSettings && (
+          <div className="mb-6">
+            <AlarmSettings
+              settings={settings}
+              onSettingsChange={updateSettings}
+              onTestAlarm={testAlarm}
+              notificationPermission={notificationPermission}
+              onRequestPermission={requestNotificationPermission}
+              isNotificationSupported={isNotificationSupported}
+            />
+          </div>
+        )}
 
         {/* Add Form */}
         {showAddForm && (

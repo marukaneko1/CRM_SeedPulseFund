@@ -282,12 +282,12 @@ export default function DashboardPage() {
   }
   
   return (
-    <div className="flex-1 bg-white flex flex-col">
+    <div className="flex-1 bg-white flex flex-col overflow-y-auto max-h-screen">
       {/* Header */}
       <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-gray-900">GV Ventures</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Deal Flow Pipelines</h1>
             <button onClick={toggleStar} className="hover:scale-110 transition-transform">
               <Star className={`w-5 h-5 ${isStarred ? 'text-yellow-400 fill-yellow-400' : 'text-gray-400'}`} />
             </button>
@@ -306,16 +306,6 @@ export default function DashboardPage() {
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-4">
           <button 
-            onClick={() => setActiveView('views')}
-            className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeView === 'views' 
-                ? 'text-blue-600 border-blue-600' 
-                : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
-            }`}
-          >
-            Views
-          </button>
-          <button 
             onClick={() => setActiveView('all-pipeline')}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeView === 'all-pipeline' 
@@ -323,47 +313,47 @@ export default function DashboardPage() {
                 : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
             }`}
           >
-            + All Pipeline
+            Master Dealflow Pipeline
           </button>
           <button 
-            onClick={() => setActiveView('saved-1')}
+            onClick={() => setActiveView('fund-pipeline')}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeView === 'saved-1' 
+              activeView === 'fund-pipeline' 
                 ? 'text-blue-600 border-blue-600' 
                 : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
             }`}
           >
-            Saved View 1
+            Fund Pipeline
           </button>
           <button 
-            onClick={() => setActiveView('team-activity')}
+            onClick={() => setActiveView('gv-ventures')}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeView === 'team-activity' 
+              activeView === 'gv-ventures' 
                 ? 'text-blue-600 border-blue-600' 
                 : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
             }`}
           >
-            Team Activity 1
+            GV Ventures
           </button>
           <button 
-            onClick={() => setActiveView('funnel')}
+            onClick={() => setActiveView('ma-pipeline')}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeView === 'funnel' 
+              activeView === 'ma-pipeline' 
                 ? 'text-blue-600 border-blue-600' 
                 : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
             }`}
           >
-            Funnel Analysis 2
+            M&A Pipeline
           </button>
           <button 
-            onClick={() => setActiveView('list-summary')}
+            onClick={() => setActiveView('master-accelerator')}
             className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeView === 'list-summary' 
+              activeView === 'master-accelerator' 
                 ? 'text-blue-600 border-blue-600' 
                 : 'text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300'
             }`}
           >
-            List Summary
+            Master Accelerator
           </button>
           <button 
             onClick={handleAddNew}
@@ -378,12 +368,11 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <p className="text-sm text-gray-600">
-              {activeView === 'all-pipeline' && `+ All Pipeline ${deals.length} organizations`}
-              {activeView === 'saved-1' && `Saved View 1: ${deals.length} portfolio companies`}
-              {activeView === 'team-activity' && `Team Activity: ${deals.length} recent interactions`}
-              {activeView === 'funnel' && `Funnel Analysis: ${deals.length} deals`}
-              {activeView === 'list-summary' && `List Summary: ${deals.length} total`}
-              {activeView === 'views' && `Views: ${deals.length} organizations`}
+              {activeView === 'all-pipeline' && `Master Dealflow Pipeline: ${deals.length} organizations`}
+              {activeView === 'fund-pipeline' && `Fund Pipeline: ${deals.length} organizations`}
+              {activeView === 'gv-ventures' && `GV Ventures: ${deals.length} organizations`}
+              {activeView === 'ma-pipeline' && `M&A Pipeline: ${deals.length} organizations`}
+              {activeView === 'master-accelerator' && `Master Accelerator: ${deals.length} organizations`}
             </p>
             {(filterStatus.length > 0 || filterDealTeam.length > 0 || searchQuery) && (
               <button 

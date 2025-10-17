@@ -18,17 +18,34 @@ export async function GET() {
       where: { email: session.user.email },
       select: {
         email: true,
-        // Note: Add these fields to your User model in production
-        // gmailConnected: true,
-        // gmailAddress: true,
+        googleAccessToken: true,
+        googleRefreshToken: true,
+        googleProfile: true,
+        googleConnectedAt: true,
       }
     })
 
-    // For demo purposes, return mock status
-    // In production, check user.gmailConnected
+    // Check if Gmail credentials are configured
+    const hasCredentials = !!(process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET)
+    
+    // Check if user has Google Workspace connected (which includes Gmail)
+    const isConnected = !!(user?.googleAccessToken && user?.googleRefreshToken)
+    
+    // Parse googleProfile if it exists
+    let googleProfile = null
+    if (user?.googleProfile) {
+      try {
+        googleProfile = JSON.parse(user.googleProfile)
+      } catch (error) {
+        console.error('Error parsing googleProfile:', error)
+      }
+    }
+
     return NextResponse.json({
-      connected: false, // Change to user.gmailConnected || false
-      email: '', // Change to user.gmailAddress || ''
+      connected: isConnected,
+      email: googleProfile?.email || user?.email || '',
+      hasCredentials,
+      connectedAt: user?.googleConnectedAt?.toISOString() || null,
     })
 
   } catch (error) {

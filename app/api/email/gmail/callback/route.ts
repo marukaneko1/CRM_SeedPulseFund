@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { exchangeGmailCode } from '@/lib/integrations/gmail'
+import { exchangeGoogleWorkspaceCode } from '@/lib/integrations/google-workspace'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -36,25 +36,21 @@ export async function GET(request: NextRequest) {
         `${new URL(request.url).origin}/api/email/gmail/callback`
     }
 
-    const { accessToken, refreshToken, email } = await exchangeGmailCode(code, config)
+    const { accessToken, refreshToken, userProfile } = await exchangeGoogleWorkspaceCode(code, config)
 
     // Save tokens to database
     await prisma.user.update({
       where: { email: session.user.email },
       data: {
-        // Note: In production, add these fields to your User model
-        // gmailAccessToken: accessToken,
-        // gmailRefreshToken: refreshToken,
-        // gmailAddress: email,
-        // gmailConnected: true
+        googleAccessToken: accessToken,
+        googleRefreshToken: refreshToken,
+        googleProfile: JSON.stringify(userProfile),
+        googleConnectedAt: new Date(),
       }
-    }).catch(() => {
-      // Ignore if columns don't exist yet
-      console.log('Gmail tokens would be saved (database schema not updated yet)')
     })
 
     // For demo, store in session/memory (not persistent)
-    console.log('Gmail connected:', email)
+    console.log('Google Workspace connected:', userProfile.email)
 
     return NextResponse.redirect(new URL('/dashboard/email?success=gmail_connected', request.url))
 
