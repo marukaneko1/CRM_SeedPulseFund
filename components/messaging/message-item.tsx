@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { 
   Play, 
@@ -329,9 +330,11 @@ export function MessageItem({ message, onVotePoll, onRespondToEvent }: MessageIt
       {/* Avatar */}
       <div className={`w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0 ${isOwnMessage ? 'order-2' : ''}`}>
         {message.sender.avatar ? (
-          <img 
+          <Image 
             src={message.sender.avatar} 
             alt={message.sender.name || 'User'}
+            width={32}
+            height={32}
             className="w-8 h-8 rounded-full object-cover"
           />
         ) : (
