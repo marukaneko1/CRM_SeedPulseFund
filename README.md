@@ -23,7 +23,7 @@
 - **Portfolio** - Full CRUD operations + metrics tracking ✨ ENHANCED
 - **Notifications** - Auto-created on events (deals, tasks, messages) ✨ NEW
 - **Reminders** - Database-persisted with API endpoints ✨ NEW
-- **Files** - Centralized document storage
+- **Files** - Cloudflare R2 storage with drag-and-drop uploads ✨ NEW
 - **Digital Signing** - E-signature workflow
 
 ### 🎨 Visual Boards (Miro-like)
@@ -79,6 +79,13 @@ OPENAI_API_KEY=sk-your-key
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=https://your-app.vercel.app/api/email/gmail/callback
+
+# Cloudflare R2 Storage
+R2_ACCOUNT_ID=your-account-id
+R2_ACCESS_KEY_ID=your-access-key
+R2_SECRET_ACCESS_KEY=your-secret-key
+R2_BUCKET_NAME=crm-seedpulse-files
+R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
 ```
 
 ### Local (`.env.local`)
