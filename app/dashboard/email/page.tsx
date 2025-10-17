@@ -65,6 +65,50 @@ export default function EmailPage() {
   const [showCompose, setShowCompose] = useState(false)
   const [showGmailSetup, setShowGmailSetup] = useState(false)
 
+  const syncGmailEmails = useCallback(async (folder: string = selectedFolder.id, reset: boolean = true) => {
+    setSyncing(true)
+    try {
+      const response = await fetch('/api/email/gmail/sync', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder, pageToken: null }) // Reset to first page
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setRealEmails(data.emails || [])
+        setNextPageToken(data.nextPageToken || null)
+        
+        // Show notification if new unread emails (only for inbox)
+        if (folder === 'inbox') {
+          const newUnread = data.emails?.filter((e: any) => !e.read).length || 0
+          if (newUnread > 0) {
+            showEmailNotification(newUnread)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing Gmail:', error)
+    } finally {
+      setSyncing(false)
+    }
+  }, [selectedFolder.id])
+
+  const checkGmailConnection = useCallback(async () => {
+    try {
+      const response = await fetch('/api/email/gmail/status')
+      if (response.ok) {
+        const data = await response.json()
+        setGmailConnected(data.connected)
+        setGmailAddress(data.email || '')
+        if (data.connected) {
+          syncGmailEmails()
+        }
+      }
+    } catch (error) {
+      console.error('Error checking Gmail status:', error)
+    }
+  }, [syncGmailEmails])
+
   // Auto-sync emails every 60 seconds
   useEffect(() => {
     if (!gmailConnected || !autoSync) return
@@ -103,22 +147,6 @@ export default function EmailPage() {
     }
   }, [checkGmailConnection, syncGmailEmails])
   
-  const checkGmailConnection = useCallback(async () => {
-    try {
-      const response = await fetch('/api/email/gmail/status')
-      if (response.ok) {
-        const data = await response.json()
-        setGmailConnected(data.connected)
-        setGmailAddress(data.email || '')
-        if (data.connected) {
-          syncGmailEmails()
-        }
-      }
-    } catch (error) {
-      console.error('Error checking Gmail status:', error)
-    }
-  }, [syncGmailEmails])
-  
   const connectGmail = async () => {
     try {
       // Redirect to Gmail OAuth
@@ -150,34 +178,6 @@ export default function EmailPage() {
       console.error('Error disconnecting Gmail:', error)
     }
   }
-  
-  const syncGmailEmails = useCallback(async (folder: string = selectedFolder.id, reset: boolean = true) => {
-    setSyncing(true)
-    try {
-      const response = await fetch('/api/email/gmail/sync', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder, pageToken: null }) // Reset to first page
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setRealEmails(data.emails || [])
-        setNextPageToken(data.nextPageToken || null)
-        
-        // Show notification if new unread emails (only for inbox)
-        if (folder === 'inbox') {
-          const newUnread = data.emails?.filter((e: any) => !e.read).length || 0
-          if (newUnread > 0) {
-            showEmailNotification(newUnread)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error syncing Gmail:', error)
-    } finally {
-      setSyncing(false)
-    }
-  }, [selectedFolder.id])
 
   const loadMoreEmails = async () => {
     if (!nextPageToken || loadingMore) return

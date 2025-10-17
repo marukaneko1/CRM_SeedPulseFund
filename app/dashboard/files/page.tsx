@@ -98,10 +98,6 @@ export default function FilesPage() {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    fetchFiles()
-  }, [session, selectedFolder, fetchFiles])
-
   const fetchFiles = useCallback(async () => {
     try {
       const url = selectedFolder 
@@ -119,6 +115,10 @@ export default function FilesPage() {
       setLoading(false)
     }
   }, [selectedFolder])
+
+  useEffect(() => {
+    fetchFiles()
+  }, [session, selectedFolder, fetchFiles])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files

@@ -142,26 +142,6 @@ export default function GoogleWorkspacePage() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Check Google Workspace connection on load
-  useEffect(() => {
-    checkGoogleConnection()
-    checkGoogleWorkspaceStatus()
-  }, [checkGoogleConnection])
-
-  const checkGoogleWorkspaceStatus = async () => {
-    try {
-      const response = await fetch('/api/google-workspace/status')
-      const status = await response.json()
-      console.log('Google Workspace Status:', status)
-      
-      if (!status.configured) {
-        console.error('Google Workspace not configured:', status.recommendations)
-      }
-    } catch (error) {
-      console.error('Error checking Google Workspace status:', error)
-    }
-  }
-
   const checkGoogleConnection = useCallback(async () => {
     try {
       // Check if user has connected Google Workspace by fetching Gmail data
@@ -192,6 +172,26 @@ export default function GoogleWorkspacePage() {
       setGoogleConnected(false)
     }
   }, [])
+
+  const checkGoogleWorkspaceStatus = async () => {
+    try {
+      const response = await fetch('/api/google-workspace/status')
+      const status = await response.json()
+      console.log('Google Workspace Status:', status)
+      
+      if (!status.configured) {
+        console.error('Google Workspace not configured:', status.recommendations)
+      }
+    } catch (error) {
+      console.error('Error checking Google Workspace status:', error)
+    }
+  }
+
+  // Check Google Workspace connection on load
+  useEffect(() => {
+    checkGoogleConnection()
+    checkGoogleWorkspaceStatus()
+  }, [checkGoogleConnection])
 
   const connectGoogleWorkspace = async () => {
     setConnecting(true)

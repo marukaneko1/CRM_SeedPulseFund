@@ -343,7 +343,7 @@ export default function DirectMessagesPage() {
                       <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                         {otherUser.avatar ? (
                           <Image 
-                            src={otherUser.avatar} 
+                            src={otherUser.avatar || ''} 
                             alt={otherUser.name}
                             width={40}
                             height={40}
@@ -410,7 +410,7 @@ export default function DirectMessagesPage() {
                   <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                     {getOtherUser(selectedChat).avatar ? (
                       <Image 
-                        src={getOtherUser(selectedChat).avatar} 
+                        src={getOtherUser(selectedChat).avatar || ''} 
                         alt={getOtherUser(selectedChat).name}
                         width={40}
                         height={40}
@@ -517,7 +517,7 @@ export default function DirectMessagesPage() {
                       <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                         {user.avatar ? (
                           <Image 
-                            src={user.avatar} 
+                            src={user.avatar || ''} 
                             alt={user.name}
                             width={32}
                             height={32}

@@ -199,7 +199,7 @@ async function fetchRecentActivity(userId: string) {
       where: {
         OR: [
           { senderId: userId },
-          { channel: { members: { some: { id: userId } } } }
+          { channel: { isPrivate: false } }
         ]
       },
       take: 50,
@@ -214,7 +214,7 @@ async function fetchRecentActivity(userId: string) {
     const reminders = await prisma.reminder.findMany({
       where: { userId },
       take: 20,
-      orderBy: { dueDate: 'asc' },
+      orderBy: { reminderDate: 'asc' },
     })
 
     // Fetch notifications
