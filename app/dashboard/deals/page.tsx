@@ -4,10 +4,12 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Plus, Edit2, Trash2, LayoutGrid, List } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/utils"
 import { DealForm } from "@/components/forms/deal-form"
+import { KanbanBoard } from "@/components/deals/kanban-board"
 
 const stages = [
   { id: "LEAD", name: "Lead", color: "bg-gray-200" },
@@ -91,6 +93,23 @@ export default function DealsPage() {
     return deals.filter(deal => deal.stage === stageId)
   }
 
+  const handleDealMove = async (dealId: string, newStage: string) => {
+    try {
+      const response = await fetch(`/api/deals/${dealId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage: newStage })
+      })
+      
+      if (response.ok) {
+        fetchDeals()
+      }
+    } catch (error) {
+      console.error('Error moving deal:', error)
+      throw error
+    }
+  }
+
   return (
     <div className="p-8 overflow-y-auto max-h-screen">
       <div className="mb-8 flex justify-between items-center">
@@ -104,7 +123,26 @@ export default function DealsPage() {
         </Button>
       </div>
 
-      {/* Pipeline Board */}
+      {/* Tabs for different views */}
+      <Tabs defaultValue="kanban" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="kanban" className="gap-2">
+            <LayoutGrid className="w-4 h-4" />
+            Kanban Board
+          </TabsTrigger>
+          <TabsTrigger value="pipeline" className="gap-2">
+            <List className="w-4 h-4" />
+            Pipeline View
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Kanban Board View */}
+        <TabsContent value="kanban">
+          <KanbanBoard deals={deals} onDealMove={handleDealMove} />
+        </TabsContent>
+
+        {/* Pipeline Board View */}
+        <TabsContent value="pipeline">
       <div className="overflow-x-auto pb-4">
         <div className="flex gap-4 min-w-max">
           {stages.map((stage) => {
@@ -152,6 +190,8 @@ export default function DealsPage() {
           })}
         </div>
       </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Stats */}
       <div className="grid md:grid-cols-4 gap-6 mt-8">
