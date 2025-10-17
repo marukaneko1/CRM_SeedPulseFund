@@ -35,10 +35,13 @@ export async function uploadFileToR2(
 
     // Generate public URL (if you have public access enabled)
     // Or use signed URL for private access
-    const url = await getSignedUrl(r2Client, new GetObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-    }), { expiresIn: 3600 * 24 * 7 }) // 7 days
+    const publicUrl = process.env.R2_PUBLIC_URL
+    const url = publicUrl 
+      ? `${publicUrl}/${key}` 
+      : await getSignedUrl(r2Client, new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: key,
+        }), { expiresIn: 3600 * 24 * 7 }) // 7 days
 
     return {
       success: true,
@@ -56,6 +59,13 @@ export async function uploadFileToR2(
  */
 export async function getSignedUrlForFile(key: string, expiresIn: number = 3600): Promise<string> {
   try {
+    // Use public URL if available (permanent, no expiration)
+    const publicUrl = process.env.R2_PUBLIC_URL
+    if (publicUrl) {
+      return `${publicUrl}/${key}`
+    }
+
+    // Fallback to signed URL for private access
     const command = new GetObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,

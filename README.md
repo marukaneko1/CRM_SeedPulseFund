@@ -81,11 +81,12 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=https://your-app.vercel.app/api/email/gmail/callback
 
 # Cloudflare R2 Storage
-R2_ACCOUNT_ID=your-account-id
-R2_ACCESS_KEY_ID=your-access-key
-R2_SECRET_ACCESS_KEY=your-secret-key
-R2_BUCKET_NAME=crm-seedpulse-files
-R2_ENDPOINT=https://your-account-id.r2.cloudflarestorage.com
+R2_ACCOUNT_ID=9c0a6d20b808ab67b3f3e0ca959d9398
+R2_ACCESS_KEY_ID=63ca595deb43709f691403f78d90e47a
+R2_SECRET_ACCESS_KEY=8711002d97df4b4665fc4e6d5b5a6b5d21f7b15d313669b2585b13adaad5f15e
+R2_BUCKET_NAME=crm-seedpulsefund
+R2_ENDPOINT=https://9c0a6d20b808ab67b3f3e0ca959d9398.r2.cloudflarestorage.com
+R2_PUBLIC_URL=https://pub-85745c25c6f44152a0e4ea09988fc509.r2.dev
 ```
 
 ### Local (`.env.local`)
