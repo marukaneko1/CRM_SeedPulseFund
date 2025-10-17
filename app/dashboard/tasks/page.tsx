@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -106,9 +106,9 @@ export default function TasksPage() {
     fetchTasks()
     fetchUsers()
     fetchDeals()
-  }, [filterStatus, filterPriority])
+  }, [fetchTasks])
 
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -127,7 +127,7 @@ export default function TasksPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterStatus, filterPriority])
 
   const fetchUsers = async () => {
     try {
