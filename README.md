@@ -17,10 +17,12 @@
 ## ✨ **FEATURES**
 
 ### 🎯 Core CRM
-- **Deals** - Track investment pipeline
+- **Deals** - Track investment pipeline with **Kanban board** (drag & drop) ✨ NEW
 - **Contacts** - Manage relationships
 - **Tasks** - Never miss follow-ups with alarm notifications
-- **Portfolio** - Monitor invested companies
+- **Portfolio** - Full CRUD operations + metrics tracking ✨ ENHANCED
+- **Notifications** - Auto-created on events (deals, tasks, messages) ✨ NEW
+- **Reminders** - Database-persisted with API endpoints ✨ NEW
 - **Files** - Centralized document storage
 - **Digital Signing** - E-signature workflow
 
