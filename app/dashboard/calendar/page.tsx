@@ -940,12 +940,7 @@ export default function CalendarPage() {
               <div className="grid grid-cols-7 gap-2">
                 {calendarDays.map((date, index) => {
                   const dateStr = date.toISOString().split('T')[0]
-                  const dayEvents = displayEvents.filter(e => {
-                    const eventDate = e.startTime || e.date || e.start
-                    if (!eventDate) return false
-                    const eventDateStr = typeof eventDate === 'string' ? eventDate.split('T')[0] : new Date(eventDate).toISOString().split('T')[0]
-                    return eventDateStr === dateStr
-                  })
+                  const dayEvents = displayEvents.filter(e => getEventDateString(e) === dateStr)
                   
                   return (
                     <button
