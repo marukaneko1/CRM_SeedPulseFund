@@ -23,6 +23,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
+    // Check file size (50MB limit)
+    const maxSize = 50 * 1024 * 1024 // 50MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 50MB.' }, { status: 413 })
+    }
+
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
@@ -77,12 +83,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Set max file size to 50MB
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '50mb',
-    },
-  },
-}
+// Max file size is handled by Next.js default (1MB) or can be increased via middleware
+// For larger files, consider using a streaming approach or external storage
 
