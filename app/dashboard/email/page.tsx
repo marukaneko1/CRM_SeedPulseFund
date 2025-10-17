@@ -10,37 +10,8 @@ import { Mail, Send, Inbox, Archive, Star, Plus, RefreshCw, Settings, AtSign } f
 import { cn } from "@/lib/utils"
 import { EmailComposeForm } from "@/components/forms/email-compose-form"
 
-// Demo emails only for admin
-const demoEmails = [
-  {
-    id: "1",
-    from: "john@startupx.com",
-    subject: "Re: Investment Proposal",
-    preview: "Thank you for considering our proposal. We'd love to discuss...",
-    time: "10:30 AM",
-    read: false,
-  },
-  {
-    id: "2",
-    from: "sarah@innovatelab.io",
-    subject: "Q4 Metrics Update",
-    preview: "Here are our latest metrics. Revenue is up 45% MoM...",
-    time: "Yesterday",
-    read: true,
-  },
-  {
-    id: "3",
-    from: "mike@techventures.com",
-    subject: "LP Update - December",
-    preview: "Monthly update on our portfolio performance...",
-    time: "2 days ago",
-    read: true,
-  },
-]
-
 export default function EmailPage() {
   const { data: session } = useSession()
-  const isAdmin = session?.user?.email === 'admin@demo.com'
   
   // Gmail integration state
   const [gmailConnected, setGmailConnected] = useState(false)
@@ -51,7 +22,8 @@ export default function EmailPage() {
   const [nextPageToken, setNextPageToken] = useState<string | null>(null)
   const [loadingMore, setLoadingMore] = useState(false)
   
-  const emails = gmailConnected ? realEmails : (isAdmin ? demoEmails : [])
+  // Only show emails when Gmail is connected - NO DEMO DATA
+  const emails = gmailConnected ? realEmails : []
   
   const folders = [
     { id: "inbox", name: "Inbox", icon: Inbox, count: emails.filter(e => !e.read).length },
@@ -341,6 +313,24 @@ export default function EmailPage() {
           <h2 className="font-semibold text-lg">{selectedFolder.name}</h2>
         </div>
         <div className="divide-y">
+          {!gmailConnected && (
+            <div className="p-8 text-center">
+              <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Connect Gmail to View Emails</h3>
+              <p className="text-gray-600 mb-4">Connect your Gmail account to access and manage your emails.</p>
+              <Button onClick={() => setShowGmailSetup(true)}>
+                <Mail className="w-4 h-4 mr-2" />
+                Connect Gmail
+              </Button>
+            </div>
+          )}
+          {gmailConnected && emails.length === 0 && (
+            <div className="p-8 text-center">
+              <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Emails</h3>
+              <p className="text-gray-600">Your {selectedFolder.name.toLowerCase()} is empty.</p>
+            </div>
+          )}
           {emails.map((email) => (
             <div
               key={email.id}

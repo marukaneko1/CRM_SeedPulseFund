@@ -41,18 +41,18 @@ import {
 } from "lucide-react"
 
 // Helper to get dynamic badge counts based on user
-const getDynamicNavigation = (isAdmin: boolean) => [
+const getDynamicNavigation = (counts?: any) => [
   // Main navigation
   { name: "Home", href: "/dashboard", icon: Home },
-  { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: isAdmin ? "3" : undefined },
-  { name: "Reminders", href: "/dashboard/reminders", icon: Calendar, badge: isAdmin ? "2" : undefined },
-  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, badge: isAdmin ? "4" : undefined },
-          { name: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: isAdmin ? "3" : undefined },
+  { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: counts?.notifications?.unread > 0 ? counts.notifications.unread.toString() : undefined },
+  { name: "Reminders", href: "/dashboard/reminders", icon: Calendar, badge: counts?.reminders?.upcoming > 0 ? counts.reminders.upcoming.toString() : undefined },
+  { name: "Calendar", href: "/dashboard/calendar", icon: Calendar, badge: counts?.calendar?.today > 0 ? counts.calendar.today.toString() : undefined },
+          { name: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: counts?.messages?.unread > 0 ? counts.messages.unread.toString() : undefined },
           { name: "Direct Messages", href: "/dashboard/direct-messages", icon: MessageSquare },
-  { name: "Email", href: "/dashboard/email", icon: Mail, badge: isAdmin ? "12" : undefined },
+  { name: "Email", href: "/dashboard/email", icon: Mail, badge: counts?.emails?.unread > 0 ? counts.emails.unread.toString() : undefined },
   { name: "Files", href: "/dashboard/files", icon: FileText },
-  { name: "Tasks", href: "/dashboard/tasks", icon: Target },
-  { name: "Watching", href: "/dashboard/watching", icon: Eye, badge: isAdmin ? "5" : undefined },
+  { name: "Tasks", href: "/dashboard/tasks", icon: Target, badge: counts?.tasks?.pending > 0 ? counts.tasks.pending.toString() : undefined },
+  { name: "Watching", href: "/dashboard/watching", icon: Eye, badge: counts?.watching?.total > 0 ? counts.watching.total.toString() : undefined },
   { name: "Screeners", href: "/dashboard/screeners", icon: Eye },
   
   // New sections
@@ -126,9 +126,32 @@ export default function DashboardLayout({
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [counts, setCounts] = useState<any>(null)
+  
+  // Fetch real-time counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const response = await fetch('/api/dashboard/counts')
+        if (response.ok) {
+          const data = await response.json()
+          setCounts(data)
+        }
+      } catch (error) {
+        console.error('Error fetching counts:', error)
+      }
+    }
+
+    if (session) {
+      fetchCounts()
+      // Refresh counts every 30 seconds
+      const interval = setInterval(fetchCounts, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [session])
   
   // Get dynamic navigation with correct badge counts
-  const navigation = getDynamicNavigation(isAdmin)
+  const navigation = getDynamicNavigation(counts)
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
