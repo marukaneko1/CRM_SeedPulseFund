@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { useSession } from "next-auth/react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -251,7 +252,7 @@ export default function EnhancedDirectMessagesPage() {
                 >
                   <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-semibold flex-shrink-0">
                     {otherUser.avatar ? (
-                      <img src={otherUser.avatar} alt={otherUser.name || 'User'} className="w-10 h-10 rounded-full object-cover" />
+                      <Image src={otherUser.avatar} alt={otherUser.name || 'User'} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       (otherUser.name || 'U').charAt(0).toUpperCase()
                     )}
@@ -289,7 +290,7 @@ export default function EnhancedDirectMessagesPage() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-base font-semibold">
                   {getOtherUser(selectedChat).avatar ? (
-                    <img src={getOtherUser(selectedChat).avatar} alt={getOtherUser(selectedChat).name || 'User'} className="w-10 h-10 rounded-full object-cover" />
+                    <Image src={getOtherUser(selectedChat).avatar} alt={getOtherUser(selectedChat).name || 'User'} width={40} height={40} className="w-10 h-10 rounded-full object-cover" />
                   ) : (
                     (getOtherUser(selectedChat).name || 'U').charAt(0).toUpperCase()
                   )}
@@ -367,9 +368,11 @@ export default function EnhancedDirectMessagesPage() {
                     >
                       <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                         {user.avatar ? (
-                          <img 
+                          <Image 
                             src={user.avatar} 
                             alt={user.name || 'User'}
+                            width={32}
+                            height={32}
                             className="w-8 h-8 rounded-full object-cover"
                           />
                         ) : (

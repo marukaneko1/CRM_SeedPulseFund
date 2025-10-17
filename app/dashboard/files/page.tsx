@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -100,9 +100,9 @@ export default function FilesPage() {
 
   useEffect(() => {
     fetchFiles()
-  }, [session, selectedFolder])
+  }, [session, selectedFolder, fetchFiles])
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     try {
       const url = selectedFolder 
         ? `/api/files?folder=${encodeURIComponent(selectedFolder)}`
@@ -118,7 +118,7 @@ export default function FilesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedFolder])
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files

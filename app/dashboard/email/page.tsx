@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -74,7 +74,7 @@ export default function EmailPage() {
     }, 60000) // 60 seconds
     
     return () => clearInterval(interval)
-  }, [gmailConnected, autoSync])
+  }, [gmailConnected, autoSync, syncGmailEmails])
   
   // Check Gmail connection status on load and handle URL parameters
   useEffect(() => {
@@ -101,9 +101,9 @@ export default function EmailPage() {
       // Clean URL
       window.history.replaceState({}, '', '/dashboard/email')
     }
-  }, [])
+  }, [checkGmailConnection, syncGmailEmails])
   
-  const checkGmailConnection = async () => {
+  const checkGmailConnection = useCallback(async () => {
     try {
       const response = await fetch('/api/email/gmail/status')
       if (response.ok) {
@@ -117,7 +117,7 @@ export default function EmailPage() {
     } catch (error) {
       console.error('Error checking Gmail status:', error)
     }
-  }
+  }, [syncGmailEmails])
   
   const connectGmail = async () => {
     try {
@@ -151,7 +151,7 @@ export default function EmailPage() {
     }
   }
   
-  const syncGmailEmails = async (folder: string = selectedFolder.id, reset: boolean = true) => {
+  const syncGmailEmails = useCallback(async (folder: string = selectedFolder.id, reset: boolean = true) => {
     setSyncing(true)
     try {
       const response = await fetch('/api/email/gmail/sync', { 
@@ -177,7 +177,7 @@ export default function EmailPage() {
     } finally {
       setSyncing(false)
     }
-  }
+  }, [selectedFolder.id])
 
   const loadMoreEmails = async () => {
     if (!nextPageToken || loadingMore) return

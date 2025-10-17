@@ -93,7 +93,7 @@ async function fetchGoogleData(userId: string) {
     // Fetch Drive files using GoogleDriveAPI
     try {
       const driveApi = new GoogleDriveAPI(user.googleAccessToken)
-      const driveFiles = await driveApi.listFiles(10) // Fetch 10 recent files
+      const driveFiles = await driveApi.listFiles() // Fetch recent files
       googleData.drive = driveFiles
       console.log(`AI Context: Fetched ${driveFiles.length} Drive files`)
     } catch (error) {

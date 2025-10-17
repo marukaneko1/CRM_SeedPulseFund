@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { 
   Mail, 
@@ -146,7 +146,7 @@ export default function GoogleWorkspacePage() {
   useEffect(() => {
     checkGoogleConnection()
     checkGoogleWorkspaceStatus()
-  }, [])
+  }, [checkGoogleConnection])
 
   const checkGoogleWorkspaceStatus = async () => {
     try {
@@ -162,7 +162,7 @@ export default function GoogleWorkspacePage() {
     }
   }
 
-  const checkGoogleConnection = async () => {
+  const checkGoogleConnection = useCallback(async () => {
     try {
       // Check if user has connected Google Workspace by fetching Gmail data
       const gmailResponse = await fetch('/api/google-workspace/gmail?maxResults=1')
@@ -191,7 +191,7 @@ export default function GoogleWorkspacePage() {
       console.error('Error checking Google connection:', error)
       setGoogleConnected(false)
     }
-  }
+  }, [])
 
   const connectGoogleWorkspace = async () => {
     setConnecting(true)

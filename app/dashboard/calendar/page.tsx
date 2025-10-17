@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -52,19 +52,8 @@ export default function CalendarPage() {
     generateCalendarDays(new Date())
   }, [])
   
-  // Auto-refresh events every 30 seconds for admin
-  useEffect(() => {
-    if (!isAdmin || !autoRefresh) return
-    
-    const interval = setInterval(() => {
-      fetchAllUsersEvents()
-    }, 30000) // 30 seconds
-    
-    return () => clearInterval(interval)
-  }, [isAdmin, autoRefresh, session])
-  
   // Fetch all users' events (admin only)
-  const fetchAllUsersEvents = async () => {
+  const fetchAllUsersEvents = useCallback(async () => {
     if (!isAdmin) return
     
     try {
@@ -88,7 +77,18 @@ export default function CalendarPage() {
     } catch (error) {
       console.error('Error fetching team events:', error)
     }
-  }
+  }, [isAdmin, teamEvents])
+
+  // Auto-refresh events every 30 seconds for admin
+  useEffect(() => {
+    if (!isAdmin || !autoRefresh) return
+    
+    const interval = setInterval(() => {
+      fetchAllUsersEvents()
+    }, 30000) // 30 seconds
+    
+    return () => clearInterval(interval)
+  }, [isAdmin, autoRefresh, session, fetchAllUsersEvents])
   
   // Show browser notification for new calendar event
   const showNewEventNotification = (event: any) => {
@@ -219,7 +219,7 @@ export default function CalendarPage() {
         fetchAllUsersEvents()
       }
     }
-  }, [session, isAdmin])
+  }, [session, isAdmin, fetchAllUsersEvents])
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString)

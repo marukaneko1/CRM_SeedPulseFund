@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -341,9 +342,11 @@ export default function DirectMessagesPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                         {otherUser.avatar ? (
-                          <img 
+                          <Image 
                             src={otherUser.avatar} 
                             alt={otherUser.name}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 rounded-full object-cover"
                           />
                         ) : (
@@ -406,9 +409,11 @@ export default function DirectMessagesPage() {
                   {/* User Info */}
                   <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                     {getOtherUser(selectedChat).avatar ? (
-                      <img 
+                      <Image 
                         src={getOtherUser(selectedChat).avatar} 
                         alt={getOtherUser(selectedChat).name}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
@@ -511,9 +516,11 @@ export default function DirectMessagesPage() {
                     >
                       <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
                         {user.avatar ? (
-                          <img 
+                          <Image 
                             src={user.avatar} 
                             alt={user.name}
+                            width={32}
+                            height={32}
                             className="w-8 h-8 rounded-full object-cover"
                           />
                         ) : (
