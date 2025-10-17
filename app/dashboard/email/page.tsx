@@ -289,7 +289,7 @@ export default function EmailPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={syncGmailEmails}
+                    onClick={() => syncGmailEmails()}
                     disabled={syncing}
                     className="flex-1"
                   >

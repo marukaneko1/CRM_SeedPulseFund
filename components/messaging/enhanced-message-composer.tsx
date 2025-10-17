@@ -441,7 +441,7 @@ export function EnhancedMessageComposer({
                 {isRecording ? 'Stop' : 'Voice'}
               </Button>
               <Button variant="ghost" className="flex flex-col h-auto py-2" onClick={() => onSendMessage({ type: 'IMAGE', content: 'Image shared' })}>
-                <Image className="w-5 h-5 mb-1" />
+                <Image className="w-5 h-5 mb-1" alt="Photos" />
                 Photos
               </Button>
               <Button variant="ghost" className="flex flex-col h-auto py-2" onClick={() => onSendMessage({ type: 'VIDEO', content: 'Video shared' })}>

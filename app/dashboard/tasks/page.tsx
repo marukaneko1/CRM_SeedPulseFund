@@ -106,7 +106,7 @@ export default function TasksPage() {
     fetchTasks()
     fetchUsers()
     fetchDeals()
-  }, [filterStatus, filterPriority])
+  }, [filterStatus, filterPriority, fetchTasks])
 
   const fetchTasks = async () => {
     try {

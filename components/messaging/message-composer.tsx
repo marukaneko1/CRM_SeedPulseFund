@@ -509,7 +509,7 @@ export function MessageComposer({ onSendMessage, channelId, directChatId, onInpu
                   }}
                   className="flex flex-col items-center justify-center min-w-[70px] p-3 hover:bg-green-50 rounded-lg transition-colors"
                 >
-                  <Image className="w-7 h-7 mb-2 text-green-600" />
+                  <Image className="w-7 h-7 mb-2 text-green-600" alt="Photo" />
                   <span className="text-xs font-medium text-gray-700">Photo</span>
                 </button>
                 
