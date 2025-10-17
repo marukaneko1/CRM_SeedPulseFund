@@ -102,12 +102,6 @@ export default function TasksPage() {
     dealId: ''
   })
 
-  useEffect(() => {
-    fetchTasks()
-    fetchUsers()
-    fetchDeals()
-  }, [fetchTasks])
-
   const fetchTasks = useCallback(async () => {
     try {
       setLoading(true)
@@ -128,6 +122,12 @@ export default function TasksPage() {
       setLoading(false)
     }
   }, [filterStatus, filterPriority])
+
+  useEffect(() => {
+    fetchTasks()
+    fetchUsers()
+    fetchDeals()
+  }, [fetchTasks])
 
   const fetchUsers = async () => {
     try {

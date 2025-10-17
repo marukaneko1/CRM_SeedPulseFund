@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -132,11 +132,7 @@ export default function IdeasPage() {
     color: 'YELLOW'
   })
 
-  useEffect(() => {
-    fetchIdeas()
-  }, [filterStatus, filterCategory, showArchived])
-
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
@@ -154,7 +150,11 @@ export default function IdeasPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filterStatus, filterCategory, showArchived])
+
+  useEffect(() => {
+    fetchIdeas()
+  }, [fetchIdeas])
 
   const createIdea = async () => {
     if (!newIdea.title || !newIdea.description) {
