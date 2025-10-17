@@ -7,15 +7,14 @@
   "scripts": {
     "dev": "next dev",
     "dev:full": "concurrently \"npm run dev\" \"node server.js\"",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma db push --accept-data-loss && next build"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.29",
@@ -67,7 +66,7 @@
     "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.16",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.1",
     "eslint-config-next": "14.0.4",
     "postcss": "^8.4.32",
     "prisma": "^5.7.1",
@@ -76,7 +75,6 @@
     "typescript": "^5.3.3"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": "20.x"
   }
 }
