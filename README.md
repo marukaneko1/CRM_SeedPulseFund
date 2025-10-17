@@ -10,7 +10,7 @@
 
 **Production:** https://crm-seed-pulse-fund-kq1l.vercel.app/
 
-**Login:** `admin@demo.com` / `admin123`
+**Login:** `admin@demo.com` / `password123`
 
 ---
 
